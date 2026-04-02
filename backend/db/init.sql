@@ -54,5 +54,5 @@ CREATE TABLE IF NOT EXISTS transacciones (
 
 -- Usuario admin por defecto (password: admin123)
 INSERT INTO usuarios (username, nombre, email, password, rol)
-VALUES ('admin', 'Administrador', 'admin@bancocbp.pe', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin')
+VALUES ('admin', 'Administrador', 'admin@bancocbp.pe', '$2a$10$jIJMK/vuLjD7WdIoxcLNGO0dTWkj.X390Fe25AROyIy55Zn1R7N3G', 'admin')
 ON CONFLICT (email) DO NOTHING;

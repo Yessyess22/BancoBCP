@@ -6,19 +6,22 @@ services:
     container_name: bancocbp_db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: alex
-      POSTGRES_PASSWORD: 123456
-      POSTGRES_DB: BancoBCP
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U alex -d BancoBCP"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      bcp_network:
+        ipv4_address: 192.168.100.10
 
   backend:
     build: ./backend
@@ -26,21 +29,16 @@ services:
     restart: unless-stopped
     ports:
       - "5001:5000"
-    environment:
-      NODE_ENV: development
-      PORT: 5000
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: alex
-      DB_PASSWORD: 123456
-      DB_NAME: BancoBCP
-      JWT_SECRET: bancocbp_jwt_secret_2024
+    env_file: .env
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
       - ./backend:/app
       - /app/node_modules
+    networks:
+      bcp_network:
+        ipv4_address: 192.168.100.20
 
   frontend:
     build: ./frontend
@@ -49,12 +47,22 @@ services:
     ports:
       - "3000:3000"
     environment:
-      REACT_APP_API_URL: http://localhost:5001/api
+      REACT_APP_API_URL: ${REACT_APP_API_URL}
     depends_on:
       - backend
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    networks:
+      bcp_network:
+        ipv4_address: 192.168.100.30
 
 volumes:
   postgres_data:
+
+networks:
+  bcp_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.100.0/24

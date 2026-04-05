@@ -155,14 +155,77 @@ Se creó `start-bcp.js` en la raíz del repositorio. El script:
 
 ---
 
+---
+
+## 2026-04-05 — Sprint Relámpago: Core de Identidad
+
+### [ARCH-004] Implementación del Core de Identidad: Auth, Usuarios y Clientes en Patrón 4 Capas
+
+**Responsable:** Alejandro Segovia  
+**Rama:** `feature/core-identidad`  
+**Estado:** Completado
+
+**Contexto:**  
+ARCH-001 estableció el patrón de 4 capas usando Transacciones como módulo de referencia. Este hito lo extiende a los módulos de Auth, Usuarios y Clientes, completando el núcleo de identidad y seguridad del sistema.
+
+**Módulos implementados:**
+
+#### Auth (`auth.controller.js` / `auth.service.js` / `auth.repository.js`)
+- Login con JWT enriquecido: el token incluye `{ id, username, rol, roles[] }` donde `roles` es el array de roles granulares del usuario.
+- Registro de auditoría automática en `auditoria_log` por cada intento de login (exitoso y fallido) — cubre **RNF-11** (Auditoría).
+- Rutas protegidas: `POST /api/auth/login`.
+
+#### Usuarios (`usuario.controller.js` / `usuario.service.js` / `usuario.repository.js`)
+- Nuevo módulo con CRUD completo: `GET /api/usuarios`, `GET /api/usuarios/:id`, `POST /api/usuarios`, `PUT /api/usuarios/:id`, `DELETE /api/usuarios/:id`.
+- Acceso restringido a rol `admin` mediante middleware `verifyRole`.
+- Auditoría automática de altas, modificaciones y bajas de usuarios.
+
+#### Clientes (`cliente.controller.js` / `cliente.service.js` / `cliente.repository.js`)
+- Refactorización completa del módulo monolítico al patrón de 4 capas.
+- Validaciones de negocio en capa Service: DNI único y Email único por cliente.
+- Auditoría automática de cambios en registros de clientes.
+
+**Middleware activado:**
+- `verifyToken` activo en todas las rutas de Clientes y Usuarios — **cierra SEC-002**.
+- `verifyRole('admin')` protege el módulo de Usuarios completo.
+
+**Estructura final implementada:**
+```
+backend/src/
+├── controllers/
+│   ├── auth.controller.js      ← NUEVO
+│   ├── cliente.controller.js   ← NUEVO
+│   ├── usuario.controller.js   ← NUEVO
+│   └── index.js
+├── services/
+│   ├── auth.service.js         ← NUEVO
+│   ├── cliente.service.js      ← NUEVO
+│   ├── usuario.service.js      ← NUEVO
+│   └── index.js
+├── repositories/
+│   ├── auth.repository.js      ← NUEVO
+│   ├── cliente.repository.js   ← NUEVO
+│   ├── usuario.repository.js   ← NUEVO
+│   └── index.js
+├── middlewares/
+│   ├── auth.middleware.js      ← verifyToken + verifyRole activos
+│   └── index.js
+└── routes/
+    ├── auth.routes.js          ← actualizado
+    ├── cliente.routes.js       ← actualizado
+    └── usuario.routes.js       ← NUEVO
+```
+
+---
+
 ## Pendientes del Sprint
 
-| ID       | Tarea                                                    | Responsable     |
-|----------|----------------------------------------------------------|-----------------|
-| ARCH-003 | Extraer App.js (789 líneas) en páginas y componentes     | Equipo Frontend |
-| ARCH-004 | Aplicar patrón 4 capas a módulos auth, clientes, cuentas | Alejandro S.    |
-| SEC-001  | Crear `.env.example` y verificar que no hay credenciales en código | Todos |
-| SEC-002  | Activar middleware `verifyToken` en todas las rutas protegidas | Alejandro S. |
-| MOD-001  | Implementar módulo Créditos (API + UI)                   | Alejandro P.    |
-| MOD-002  | Implementar módulo Cuentas — rutas PUT/DELETE faltantes  | Yessica         |
-| MOD-003  | Completar Dashboard KPIs (endpoints parciales)           | Denis           |
+| ID       | Tarea                                                    | Responsable     | Estado      |
+|----------|----------------------------------------------------------|-----------------|-------------|
+| ARCH-003 | Extraer App.js (789 líneas) en páginas y componentes     | Equipo Frontend | Pendiente   |
+| ARCH-004 | Aplicar patrón 4 capas a módulos auth, clientes, usuarios| Alejandro S.    | **Completado** |
+| SEC-001  | Crear `.env.example` y verificar que no hay credenciales en código | Todos | Pendiente |
+| SEC-002  | Activar middleware `verifyToken` en todas las rutas protegidas | Alejandro S. | **Completado** |
+| MOD-001  | Implementar módulo Créditos (API + UI)                   | Alejandro P.    | Pendiente   |
+| MOD-002  | Implementar módulo Cuentas — rutas PUT/DELETE faltantes  | Yessica         | Pendiente   |
+| MOD-003  | Completar Dashboard KPIs (endpoints parciales)           | Denis           | Pendiente   |

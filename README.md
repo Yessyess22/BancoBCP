@@ -132,17 +132,42 @@ BancoBCP/
 
 ## Endpoints Principales
 
-| Metodo | Ruta                              | Descripcion                     |
-|--------|-----------------------------------|---------------------------------|
-| POST   | /api/auth/login                   | Iniciar sesion                  |
-| GET    | /api/clientes                     | Listar clientes                 |
-| POST   | /api/clientes                     | Registrar cliente               |
-| GET    | /api/cuentas                      | Listar cuentas                  |
-| POST   | /api/cuentas                      | Crear cuenta                    |
-| GET    | /api/transacciones                | Listar transacciones            |
-| POST   | /api/transacciones/deposito       | Realizar deposito                |
-| POST   | /api/transacciones/retiro         | Realizar retiro                 |
-| POST   | /api/transacciones/transferencia  | Transferir entre cuentas        |
+### Autenticacion
+| Metodo | Ruta              | Auth        | Descripcion                                               |
+|--------|-------------------|-------------|-----------------------------------------------------------|
+| POST   | /api/auth/login   | No          | Iniciar sesion. Retorna JWT con `{ id, username, rol, roles[] }` |
+
+### Usuarios *(solo administradores)*
+| Metodo | Ruta                  | Auth        | Descripcion                     |
+|--------|-----------------------|-------------|---------------------------------|
+| GET    | /api/usuarios         | JWT + admin | Listar usuarios del sistema     |
+| GET    | /api/usuarios/:id     | JWT + admin | Obtener usuario por ID          |
+| POST   | /api/usuarios         | JWT + admin | Crear usuario                   |
+| PUT    | /api/usuarios/:id     | JWT + admin | Actualizar usuario              |
+| DELETE | /api/usuarios/:id     | JWT + admin | Eliminar usuario                |
+
+### Clientes
+| Metodo | Ruta                | Auth | Descripcion                     |
+|--------|---------------------|------|---------------------------------|
+| GET    | /api/clientes       | JWT  | Listar clientes                 |
+| POST   | /api/clientes       | JWT  | Registrar cliente               |
+| GET    | /api/clientes/:id   | JWT  | Obtener cliente por ID          |
+| PUT    | /api/clientes/:id   | JWT  | Actualizar cliente              |
+| DELETE | /api/clientes/:id   | JWT  | Eliminar cliente (soft delete)  |
+
+### Cuentas
+| Metodo | Ruta              | Auth | Descripcion                     |
+|--------|-------------------|------|---------------------------------|
+| GET    | /api/cuentas      | JWT  | Listar cuentas                  |
+| POST   | /api/cuentas      | JWT  | Crear cuenta                    |
+
+### Transacciones
+| Metodo | Ruta                              | Auth | Descripcion                     |
+|--------|-----------------------------------|------|---------------------------------|
+| GET    | /api/transacciones                | JWT  | Listar transacciones            |
+| POST   | /api/transacciones/deposito       | JWT  | Realizar deposito               |
+| POST   | /api/transacciones/retiro         | JWT  | Realizar retiro                 |
+| POST   | /api/transacciones/transferencia  | JWT  | Transferir entre cuentas        |
 
 ---
 

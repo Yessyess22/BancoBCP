@@ -4,9 +4,10 @@ const cors = require('cors');
 const pool = require('./config/db');
 const { errorHandler } = require('./middlewares/error.middleware');
 
-const authRoutes       = require('./routes/auth.routes');
-const clienteRoutes    = require('./routes/cliente.routes');
-const cuentaRoutes     = require('./routes/cuenta.routes');
+const authRoutes        = require('./routes/auth.routes');
+const usuarioRoutes     = require('./routes/usuario.routes');
+const clienteRoutes     = require('./routes/cliente.routes');
+const cuentaRoutes      = require('./routes/cuenta.routes');
 const transaccionRoutes = require('./routes/transaccion.routes');
 
 const app = express();
@@ -25,6 +26,7 @@ app.get('/api/health', async (req, res) => {
 });
 
 app.use('/api/auth',          authRoutes);
+app.use('/api/usuarios',      usuarioRoutes);
 app.use('/api/clientes',      clienteRoutes);
 app.use('/api/cuentas',       cuentaRoutes);
 app.use('/api/transacciones', transaccionRoutes);

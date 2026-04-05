@@ -1,4 +1,4 @@
-const { verifyToken } = require('./auth.middleware');
+const { verifyToken, verifyRole } = require('./auth.middleware');
 const { errorHandler } = require('./error.middleware');
 
-module.exports = { verifyToken, errorHandler };
+module.exports = { verifyToken, verifyRole, errorHandler };

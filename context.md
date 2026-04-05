@@ -17,18 +17,18 @@ El Sistema BancoBCP es un **TPS/MIS bancario** de propósito académico (UPDS �
 
 ### Módulos del dominio
 
-| Módulo            | Estado UI   | Estado API  | Prioridad Sprint |
-|-------------------|-------------|-------------|------------------|
-| Autenticación     | Completo    | Completo    | Mantenimiento    |
-| Clientes          | Completo    | Completo    | Mantenimiento    |
-| Cuentas           | Completo    | Completo    | Mantenimiento    |
-| Transacciones     | Completo    | Completo*   | BUG CRÍTICO      |
-| Dashboard/MIS     | Completo    | Parcial     | Mejora           |
-| Créditos          | Deshabilitado | Ausente   | Desarrollo       |
-| Tarjetas          | Deshabilitado | Ausente   | Desarrollo       |
-| Reclamos          | Deshabilitado | Ausente   | Desarrollo       |
-| Reportes Auditoría| Deshabilitado | Ausente   | Desarrollo       |
-| Usuarios/Roles    | Ausente     | Ausente     | Desarrollo       |
+| Módulo            | Estado UI   | Estado API              | Prioridad Sprint |
+|-------------------|-------------|-------------------------|------------------|
+| Autenticación     | Completo    | Completo (4 capas)      | Mantenimiento    |
+| Clientes          | Completo    | Completo (4 capas)      | Mantenimiento    |
+| Cuentas           | Completo    | Completo                | Mantenimiento    |
+| Transacciones     | Completo    | Completo*               | BUG CRÍTICO      |
+| Dashboard/MIS     | Completo    | Parcial                 | Mejora           |
+| Usuarios/Roles    | Ausente     | Completo (4 capas)      | Desarrollo       |
+| Créditos          | Deshabilitado | Ausente               | Desarrollo       |
+| Tarjetas          | Deshabilitado | Ausente               | Desarrollo       |
+| Reclamos          | Deshabilitado | Ausente               | Desarrollo       |
+| Reportes Auditoría| Deshabilitado | Ausente               | Desarrollo       |
 
 > (*) Bug activo en transferencias — ver sección 6.
 
@@ -56,7 +56,12 @@ El Sistema BancoBCP es un **TPS/MIS bancario** de propósito académico (UPDS �
 
 ### 2.2 Patrón de Capas (Estado Actual vs. Objetivo)
 
-#### Estado ACTUAL (Monolítico en rutas)
+#### Estado IMPLEMENTADO (Auth / Usuarios / Clientes / Transacciones)
+```
+Request → Middleware (verifyToken, verifyRole) → Router → Controller → Service → Repository → PostgreSQL
+```
+
+#### Estado PENDIENTE (Cuentas, Créditos, Tarjetas, Reclamos)
 ```
 Request → Router (routes/*.js)
               └── Lógica de negocio embebida
@@ -64,7 +69,7 @@ Request → Router (routes/*.js)
               └── Respuesta HTTP
 ```
 
-#### Estado OBJETIVO (Patrón por Capas — Sprint Relámpago)
+#### Estado OBJETIVO completo (Patrón por Capas — Sprint Relámpago)
 ```
 Request
   → Middleware (auth, validación, rate-limit)
@@ -95,11 +100,11 @@ backend/
 │   │   ├── credito.routes.js      (PENDIENTE)
 │   │   ├── tarjeta.routes.js      (PENDIENTE)
 │   │   ├── reporte.routes.js      (PENDIENTE)
-│   │   └── usuario.routes.js      (PENDIENTE)
-│   ├── controllers/               (CAPA FALTANTE)
-│   ├── services/                  (CAPA FALTANTE)
-│   ├── repositories/              (CAPA FALTANTE)
-│   ├── models/                    (CAPA FALTANTE — Sequelize)
+│   │   └── usuario.routes.js      (implementado)
+│   ├── controllers/               (auth, cliente, usuario implementados)
+│   ├── services/                  (auth, cliente, usuario implementados)
+│   ├── repositories/              (auth, cliente, usuario implementados)
+│   ├── models/                    (PENDIENTE — Sequelize)
 │   └── index.js
 ├── db/
 │   └── init.sql
@@ -197,13 +202,13 @@ CREATE TABLE transacciones (
 | RF-05 | Retiro con validación de saldo suficiente          | Completo    | P1        |
 | RF-06 | Transferencia atómica entre cuentas                | **BUG**     | P1 URGENTE|
 | RF-07 | Dashboard con KPIs (clientes, cuentas, volumen)    | Parcial     | P1        |
-| RF-08 | Gestión de Roles y Permisos (admin/empleado)       | Ausente     | P1        |
-| RF-09 | Registro de Auditoría de operaciones               | Ausente     | P1        |
+| RF-08 | Gestión de Roles y Permisos (admin/empleado)       | Completo    | P1        |
+| RF-09 | Registro de Auditoría de operaciones               | Completo    | P1        |
 | RF-10 | Módulo de Créditos (solicitud, aprobación, cuotas) | Ausente     | P2        |
 | RF-11 | Módulo de Tarjetas (emisión, estado, límite)       | Ausente     | P2        |
 | RF-12 | Módulo de Reclamos                                 | Ausente     | P3        |
 | RF-13 | Reportes exportables (PDF/Excel)                   | Ausente     | P2        |
-| RF-14 | Gestión de Usuarios del sistema                    | Ausente     | P1        |
+| RF-14 | Gestión de Usuarios del sistema                    | Completo    | P1        |
 
 ### 4.2 Requerimientos No Funcionales (RNF)
 
@@ -212,7 +217,7 @@ CREATE TABLE transacciones (
 | RNF-01 | Autenticación stateless con JWT (HS256, 8h expiry)       | Completo    |
 | RNF-02 | Contraseñas hasheadas con bcrypt (salt rounds ≥ 10)      | Completo    |
 | RNF-03 | Variables de entorno en .env (no credenciales en código) | **FALTANTE**|
-| RNF-04 | Middleware de autenticación en rutas protegidas           | **FALTANTE**|
+| RNF-04 | Middleware de autenticación en rutas protegidas           | Completo    |
 | RNF-05 | Validación de entradas en todos los endpoints            | **FALTANTE**|
 | RNF-06 | Logging estructurado con Winston + Morgan                | **FALTANTE**|
 | RNF-07 | Respuestas API estandarizadas `{success, data, message}` | **FALTANTE**|
@@ -243,7 +248,18 @@ CREATE TABLE transacciones (
 | POST   | /api/auth/logout | —                           | JWT  | PENDIENTE|
 | GET    | /api/auth/me     | —                           | JWT  | PENDIENTE|
 
-### 5.2 Clientes
+> Login retorna `{ token, user: { id, username, rol, roles[] } }`. El campo `roles` contiene los roles granulares del usuario para control de acceso fino en el frontend.
+
+### 5.2 Usuarios *(nuevo — solo admin)*
+| Método | Ruta                  | Body                                           | Auth        | Estado |
+|--------|-----------------------|------------------------------------------------|-------------|--------|
+| GET    | /api/usuarios         | —                                              | JWT + admin | OK     |
+| GET    | /api/usuarios/:id     | —                                              | JWT + admin | OK     |
+| POST   | /api/usuarios         | `{username, password, nombre, apellido, rol}`  | JWT + admin | OK     |
+| PUT    | /api/usuarios/:id     | `{nombre, apellido, rol}`                      | JWT + admin | OK     |
+| DELETE | /api/usuarios/:id     | —                                              | JWT + admin | OK     |
+
+### 5.3 Clientes
 | Método | Ruta                | Body / Params                                          | Auth | Estado   |
 |--------|---------------------|--------------------------------------------------------|------|----------|
 | GET    | /api/clientes       | ?search=&page=&limit=                                  | JWT  | OK*      |
@@ -254,7 +270,7 @@ CREATE TABLE transacciones (
 
 > (*) Sin middleware JWT activo actualmente.
 
-### 5.3 Cuentas
+### 5.4 Cuentas
 | Método | Ruta              | Body                                      | Auth | Estado   |
 |--------|-------------------|-------------------------------------------|------|----------|
 | GET    | /api/cuentas      | —                                         | JWT  | OK*      |
@@ -263,7 +279,7 @@ CREATE TABLE transacciones (
 | PUT    | /api/cuentas/:id  | `{tipo, moneda, activa}`                  | JWT  | PENDIENTE|
 | DELETE | /api/cuentas/:id  | —                                         | JWT  | PENDIENTE|
 
-### 5.4 Transacciones
+### 5.5 Transacciones
 | Método | Ruta                              | Body                                                 | Auth | Estado    |
 |--------|-----------------------------------|------------------------------------------------------|------|-----------|
 | GET    | /api/transacciones                | ?limit=100                                           | JWT  | OK*       |
@@ -271,10 +287,9 @@ CREATE TABLE transacciones (
 | POST   | /api/transacciones/retiro         | `{cuenta_origen_id, monto, descripcion}`             | JWT  | OK*       |
 | POST   | /api/transacciones/transferencia  | `{cuenta_origen_id, cuenta_destino_id, monto, descripcion}` | JWT | **BUG** |
 
-### 5.5 Módulos Pendientes (Estructura Esperada)
+### 5.6 Módulos Pendientes (Estructura Esperada)
 | Módulo      | Prefijo            | Rutas mínimas esperadas                       |
 |-------------|--------------------|-----------------------------------------------|
-| Usuarios    | /api/usuarios      | GET, GET/:id, POST, PUT/:id, DELETE/:id       |
 | Créditos    | /api/creditos      | GET, GET/:id, POST, PUT/:id (estado), GET/:id/cuotas |
 | Tarjetas    | /api/tarjetas      | GET, GET/:id, POST, PUT/:id (bloquear/activar)|
 | Reclamos    | /api/reclamos      | GET, GET/:id, POST, PUT/:id (estado)          |
@@ -453,8 +468,8 @@ Antes de que el equipo clone sus ramas, el tech lead debe resolver:
 ### BLOQUEANTES (deben estar resueltos antes del primer PR)
 - [ ] **BUG-001**: Corregir parámetro en transferencia (`transaccion.routes.js:~80`)
 - [ ] **SEC-001**: Crear `.env.example` y mover credenciales fuera de `docker-compose.yml`
-- [ ] **SEC-002**: Agregar middleware `verifyToken` a todas las rutas protegidas
-- [ ] **ARCH-001**: Crear carpetas `controllers/`, `services/`, `repositories/` con archivos `index.js`
+- [x] **SEC-002**: Agregar middleware `verifyToken` a todas las rutas protegidas *(completo — Auth, Clientes, Usuarios)*
+- [x] **ARCH-001**: Crear capas `controllers/`, `services/`, `repositories/` para Auth, Clientes y Usuarios
 - [ ] **ARCH-002**: Crear carpetas `pages/`, `components/`, `context/`, `hooks/` en frontend
 
 ### ALTA PRIORIDAD (Sprint Relámpago)

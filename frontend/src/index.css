@@ -53,9 +53,9 @@ html, body, #root {
 
 /* ─── App Layout ────────────────────────────────────────────── */
 .app-layout {
-  display: grid;
-  grid-template-columns: var(--sidebar-w) 1fr;
   min-height: 100vh;
+  width: 100%;
+  display: block;
 }
 
 /* ─── Sidebar ───────────────────────────────────────────────── */
@@ -93,10 +93,11 @@ html, body, #root {
 }
 
 .sidebar-logo-text {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 800;
   color: var(--text-primary);
-  letter-spacing: -0.5px;
+  letter-spacing: -0.8px;
+  white-space: nowrap;
 }
 .sidebar-logo-text span { color: var(--primary); }
 
@@ -219,8 +220,9 @@ html, body, #root {
 }
 
 .page-content {
-  padding: 28px 32px;
-  max-width: 1400px;
+  padding: 32px 40px;
+  width: 100%;
+  max-width: 100%;
 }
 
 /* ─── Page Header ───────────────────────────────────────────── */
@@ -244,18 +246,50 @@ html, body, #root {
 .topbar {
   background: white;
   border-bottom: 1px solid var(--border);
-  padding: 14px 32px;
+  padding: 16px 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   position: sticky; top: 0; z-index: 50;
+  min-height: 70px;
 }
 
-.topbar-title { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+.topbar-title { 
+  font-size: 15px; 
+  font-weight: 700; 
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
 
-.topbar-right { display: flex; align-items: center; gap: 12px; }
+.topbar-title b {
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
 
-.topbar-date { font-size: 12px; color: var(--text-secondary); }
+.topbar-title span {
+  font-size: 10px;
+  letter-spacing: 1px;
+  margin-top: 2px;
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.topbar-right { 
+  display: flex; 
+  align-items: center; 
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+.topbar-date { 
+  font-size: 12px; 
+  color: var(--text-secondary);
+  font-weight: 500;
+}
 
 .db-status {
   display: flex; align-items: center; gap: 6px;
@@ -298,12 +332,6 @@ html, body, #root {
 }
 .card-title-action:hover { opacity: .75; }
 
-/* ─── Dashboard Grid ────────────────────────────────────────── */
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: 1.1fr 1fr;
-  gap: 20px;
-}
 
 .dashboard-left { display: flex; flex-direction: column; gap: 20px; }
 .dashboard-right { display: flex; flex-direction: column; gap: 20px; }
@@ -749,16 +777,92 @@ tbody tr:hover { background: #fafbfc; }
 .empty-state p { font-size: 13px; }
 
 /* ─── Responsive ─────────────────────────────────────────────── */
-@media (max-width: 1100px) {
+@media (max-width: 1280px) {
+  :root { --sidebar-w: 200px; }
   .stats-row { grid-template-columns: repeat(2, 1fr); }
-  .dashboard-grid { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   :root { --sidebar-w: 0px; }
   .sidebar { transform: translateX(-240px); }
   .main-area { margin-left: 0; }
-  .page-content { padding: 20px 16px; }
-  .stats-row { grid-template-columns: 1fr 1fr; }
-  .form-grid { grid-template-columns: 1fr; }
+  .topbar { padding: 14px 20px; }
+  .page-content { padding: 20px; }
 }
+
+/* ─── Additional Button Variants ─────────────────────────────── */
+.btn-success {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  border: 1px solid rgba(29,181,132,.25);
+}
+.btn-success:hover { background: var(--primary); color: white; }
+
+.btn-warning {
+  background: var(--accent-light);
+  color: #C07D10;
+  border: 1px solid rgba(245,166,35,.25);
+}
+.btn-warning:hover { background: var(--accent); color: white; }
+
+/* ─── Modal Overlay ──────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.18s ease;
+}
+
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+
+.modal-box {
+  background: white;
+  border-radius: var(--radius-xl);
+  box-shadow: 0 24px 80px rgba(0,0,0,.25);
+  width: 100%;
+  max-width: 480px;
+  animation: slideUp 0.22s ease;
+  overflow: hidden;
+}
+
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all var(--transition);
+}
+.modal-close:hover { background: var(--danger-light); color: var(--danger); }
+
+/* ─── Transacciones empty state ──────────────────────────────── */
+.transaccion-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+

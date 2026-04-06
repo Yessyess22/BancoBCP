@@ -255,3 +255,25 @@ INSERT INTO usuarios (username, nombre, email, password, rol)
 VALUES ('admin', 'Administrador', 'admin@bancocbcp.pe',
         '$2a$10$jIJMK/vuLjD7WdIoxcLNGO0dTWkj.X390Fe25AROyIy55Zn1R7N3G', 'admin')
 ON CONFLICT (email) DO NOTHING;
+
+-- Seed Permisos
+INSERT INTO permisos (codigo, descripcion, modulo) VALUES
+  ('OP_REGISTRAR_CLIENTE', 'Permitir registro de nuevos clientes', 'CLIENTES'),
+  ('OP_APERTURA_CUENTA', 'Permitir apertura de cuentas bancarias', 'CUENTAS'),
+  ('OP_OPERAR_TRANSACCION', 'Permitir depósitos, retiros y transferencias', 'TRANSACCIONES'),
+  ('OP_REVISAR_CREDITO', 'Permitir aprobación de solicitudes de crédito', 'CREDITOS')
+ON CONFLICT (codigo) DO NOTHING;
+
+-- Asignar permisos al rol empleado (cajero)
+INSERT INTO rol_permisos (rol_id, permiso_id)
+SELECT r.id, p.id 
+FROM roles r, permisos p 
+WHERE r.nombre = 'empleado' AND p.codigo IN ('OP_REGISTRAR_CLIENTE', 'OP_APERTURA_CUENTA', 'OP_OPERAR_TRANSACCION')
+ON CONFLICT DO NOTHING;
+
+-- Asignar permisos al rol admin (todos)
+INSERT INTO rol_permisos (rol_id, permiso_id)
+SELECT r.id, p.id 
+FROM roles r, permisos p 
+WHERE r.nombre = 'admin'
+ON CONFLICT DO NOTHING;

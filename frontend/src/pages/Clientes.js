@@ -1,0 +1,178 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useParams as useParamStore } from '../App';
+
+const API = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+const emptyForm = { dni: '', nombre: '', apellido: '', email: '', telefono: '', direccion: '', fecha_nacimiento: '', ubicacion_id: '' };
+
+export default function ClientesPage() {
+  const { ubicaciones }             = useParamStore();
+  const [clientes, setClientes]     = useState([]);
+  const [showForm, setShowForm]     = useState(false);
+  const [loading, setLoading]       = useState(true);
+  const [msg, setMsg]               = useState('');
+  const [editTarget, setEditTarget] = useState(null);
+  const [form, setForm]             = useState(emptyForm);
+
+  const fetchClientes = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${API}/clientes`);
+      setClientes(Array.isArray(res.data) ? res.data : (res.data?.data || []));
+    } catch (err) {}
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchClientes(); }, []);
+
+  const flash = (text) => { setMsg(text); setTimeout(() => setMsg(''), 4000); };
+
+  const handleNew = () => {
+    setEditTarget(null);
+    setForm(emptyForm);
+    setShowForm(true);
+  };
+
+  const handleEdit = (c) => {
+    setEditTarget(c);
+    setForm({
+      dni: c.dni || '', nombre: c.nombre || '', apellido: c.apellido || '',
+      email: c.email || '', telefono: c.telefono || '',
+      direccion: c.direccion || '',
+      fecha_nacimiento: c.fecha_nacimiento ? c.fecha_nacimiento.split('T')[0] : '',
+      ubicacion_id: c.ubicacion_id || '',
+    });
+    setShowForm(true);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editTarget) {
+        await axios.put(`${API}/clientes/${editTarget.id}`, form);
+        flash('✅ Cliente actualizado exitosamente');
+      } else {
+        await axios.post(`${API}/clientes`, form);
+        flash('✅ Cliente registrado exitosamente');
+      }
+      setShowForm(false);
+      setForm(emptyForm);
+      setEditTarget(null);
+      fetchClientes();
+    } catch (err) {
+      flash('❌ ' + (err.response?.data?.message || err.response?.data?.error || 'Error al guardar'));
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('¿Desactivar este cliente?')) return;
+    try {
+      await axios.delete(`${API}/clientes/${id}`);
+      flash('✅ Cliente desactivado');
+      fetchClientes();
+    } catch (err) {
+      flash('❌ ' + (err.response?.data?.message || err.response?.data?.error || 'Permiso Denegado'));
+    }
+  };
+
+  return (
+    <div className="page-content">
+      <div className="page-header">
+        <div>
+          <h2>Gestión de Clientes</h2>
+          <p className="page-subtitle">Módulo de Identidad · Registro vinculado a Ubicación Geográfica</p>
+        </div>
+        <button className="btn btn-primary" onClick={showForm ? () => setShowForm(false) : handleNew}>
+          {showForm ? '✕ Cancelar' : '➕ Nuevo Cliente'}
+        </button>
+      </div>
+
+      {msg && <div className={`alert ${msg.startsWith('✅') ? 'alert-success' : 'alert-error'}`}>{msg}</div>}
+
+      {showForm && (
+        <div className="card" style={{ marginBottom: 24 }}>
+          <div className="card-title">{editTarget ? `✏️ Editar Cliente` : 'Registrar Nuevo Cliente'}</div>
+          <form onSubmit={handleSubmit}>
+            <div className="form-grid">
+              <div className="form-group">
+                <label>DNI *</label>
+                <input value={form.dni} onChange={e => setForm({ ...form, dni: e.target.value })} required disabled={!!editTarget} />
+              </div>
+              <div className="form-group">
+                <label>Nombres *</label>
+                <input value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} required />
+              </div>
+              <div className="form-group">
+                <label>Apellidos *</label>
+                <input value={form.apellido} onChange={e => setForm({ ...form, apellido: e.target.value })} required />
+              </div>
+              <div className="form-group">
+                <label>Email</label>
+                <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label>Teléfono</label>
+                <input value={form.telefono} onChange={e => setForm({ ...form, telefono: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label>Ubicación / Región</label>
+                <select value={form.ubicacion_id} onChange={e => setForm({ ...form, ubicacion_id: e.target.value })}>
+                  <option value="">-- Seleccionar ubicación --</option>
+                  {ubicaciones.map(u => <option key={u.id} value={u.id}>{u.nombre} ({u.nivel})</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Fecha de Nacimiento</label>
+                <input type="date" value={form.fecha_nacimiento} onChange={e => setForm({ ...form, fecha_nacimiento: e.target.value })} />
+              </div>
+              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                <label>Dirección Domiciliaria</label>
+                <input value={form.direccion} onChange={e => setForm({ ...form, direccion: e.target.value })} />
+              </div>
+            </div>
+            <div style={{ marginTop: 20, display: 'flex', gap: 10 }}>
+              <button type="submit" className="btn btn-primary">{editTarget ? '💾 Guardar Cambios' : '✅ Registrar Cliente'}</button>
+              <button type="button" className="btn btn-secondary" onClick={() => setShowForm(false)}>Cancelar</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <div className="card">
+        <div className="card-title">Lista de Clientes ({clientes.length})</div>
+        {loading ? <div className="spinner" style={{ margin: '40px auto' }}></div> : (
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>DNI</th>
+                  <th>Nombre Completo</th>
+                  <th>Ubicación</th>
+                  <th>Email / Teléfono</th>
+                  <th style={{ textAlign: 'right' }}>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {clientes.map(c => (
+                  <tr key={c.id}>
+                    <td><span className="badge badge-blue">{c.dni}</span></td>
+                    <td><strong>{c.nombre} {c.apellido}</strong><div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{c.direccion}</div></td>
+                    <td>{c.ubicacion_nombre || <em style={{ color: 'var(--text-muted)' }}>No asignada</em>}</td>
+                    <td>{c.email}<br /><small>{c.telefono}</small></td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                        <button className="btn btn-sm btn-secondary" onClick={() => handleEdit(c)}>✏️</button>
+                        <button className="btn btn-sm btn-danger" onClick={() => handleDelete(c.id)}>🗑️</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

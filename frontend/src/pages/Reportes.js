@@ -15,6 +15,10 @@ export default function ReportesPage() {
   const [activeTab, setActiveTab] = useState('Resumen');
   const [pdfLoading, setPdfLoading] = useState(false);
 
+  // Estados para paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
   const fetchAll = async () => {
     setLoading(true);
     try {
@@ -33,6 +37,11 @@ export default function ReportesPage() {
   };
 
   useEffect(() => { fetchAll(); }, []);
+
+  // Resetear página al cambiar de pestaña
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab]);
 
   const generatePDF = async () => {
     setPdfLoading(true);
@@ -87,7 +96,7 @@ export default function ReportesPage() {
       doc.autoTable({
         startY: y1 + 2,
         head: [['ID', 'Tipo', 'Origen', 'Destino', 'Monto', 'Fecha']],
-        body: transacciones.slice(0, 30).map(t => [
+        body: transacciones.slice(0, 100).map(t => [
           `#${t.id}`,
           t.tipo?.toUpperCase(),
           t.origen || 'Efectivo',
@@ -135,6 +144,30 @@ export default function ReportesPage() {
     }
   };
 
+  // Lógica de paginación por pestaña
+  const getPaginatedData = (data) => {
+    const totalItems = data.length;
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const startIndex = (currentPage - 1) * pageSize;
+    const paginated = data.slice(startIndex, startIndex + pageSize);
+    return { paginated, totalItems, totalPages };
+  };
+
+  const renderPagination = (totalItems, totalPages) => {
+    if (totalPages <= 1) return null;
+    return (
+      <div className="pagination-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, padding: '0 10px' }}>
+        <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+          Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong> ({totalItems} resultados)
+        </div>
+        <div className="pagination-buttons" style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-sm btn-secondary" disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}>⬅️ Anterior</button>
+          <button className="btn btn-sm btn-secondary" disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => prev + 1)}>Siguiente ➡️</button>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) return (
     <div className="page-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
       <div style={{ textAlign: 'center' }}>
@@ -159,7 +192,6 @@ export default function ReportesPage() {
         </button>
       </div>
 
-      {/* KPI Cards */}
       <div className="stats-row" style={{ marginBottom: 24 }}>
         <div className="stat-card">
           <div className="stat-icon-wrap stat-icon-green">👥</div>
@@ -189,7 +221,6 @@ export default function ReportesPage() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="type-toggle-group" style={{ marginBottom: 20 }}>
         {TABS.map(t => (
           <button key={t} className={`type-toggle-btn ${activeTab === t ? 'active' : ''}`} onClick={() => setActiveTab(t)}>
@@ -198,109 +229,121 @@ export default function ReportesPage() {
         ))}
       </div>
 
-      {/* Resumen Tab */}
-      {activeTab === 'Resumen' && (
-        <div className="card">
-          <div className="card-title">Últimas Transacciones del Sistema</div>
-          <div className="table-container">
-            <table>
-              <thead><tr><th>Tipo</th><th>Cuenta Origen</th><th>Cuenta Destino</th><th>Monto</th><th>Fecha</th></tr></thead>
-              <tbody>
-                {recentTx.length === 0
-                  ? <tr><td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 32 }}>Sin transacciones recientes</td></tr>
-                  : recentTx.map(t => (
-                  <tr key={t.id}>
-                    <td><span className={`badge badge-${t.tipo === 'deposito' ? 'green' : t.tipo === 'retiro' ? 'red' : 'blue'}`}>{t.tipo?.toUpperCase()}</span></td>
-                    <td>{t.origen || <em style={{ color: 'var(--text-muted)' }}>Efectivo</em>}</td>
-                    <td>{t.destino || <em style={{ color: 'var(--text-muted)' }}>Efectivo</em>}</td>
-                    <td><strong>S/. {parseFloat(t.monto).toFixed(2)}</strong></td>
-                    <td>{new Date(t.created_at).toLocaleString('es-PE')}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {activeTab === 'Resumen' && (() => {
+        const { paginated, totalItems, totalPages } = getPaginatedData(recentTx);
+        return (
+          <div className="card">
+            <div className="card-title">Últimas Transacciones del Sistema</div>
+            <div className="table-container">
+              <table>
+                <thead><tr><th>Tipo</th><th>Cuenta Origen</th><th>Cuenta Destino</th><th>Monto</th><th>Fecha</th></tr></thead>
+                <tbody>
+                  {paginated.length === 0
+                    ? <tr><td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 32 }}>Sin transacciones recientes</td></tr>
+                    : paginated.map(t => (
+                    <tr key={t.id}>
+                      <td><span className={`badge badge-${t.tipo === 'deposito' ? 'green' : t.tipo === 'retiro' ? 'red' : 'blue'}`}>{t.tipo?.toUpperCase()}</span></td>
+                      <td>{t.origen || <em style={{ color: 'var(--text-muted)' }}>Efectivo</em>}</td>
+                      <td>{t.destino || <em style={{ color: 'var(--text-muted)' }}>Efectivo</em>}</td>
+                      <td><strong>S/. {parseFloat(t.monto).toFixed(2)}</strong></td>
+                      <td>{new Date(t.created_at).toLocaleString('es-PE')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {renderPagination(totalItems, totalPages)}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
-      {/* Cuentas Tab */}
-      {activeTab === 'Cuentas' && (
-        <div className="card">
-          <div className="card-title">Cuentas Bancarias ({cuentas.length})</div>
-          <div className="table-container">
-            <table>
-              <thead><tr><th>Número</th><th>Titular</th><th>Tipo</th><th>Saldo</th><th>Moneda</th><th>Estado</th></tr></thead>
-              <tbody>
-                {cuentas.length === 0
-                  ? <tr><td colSpan="6" style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>Sin cuentas</td></tr>
-                  : cuentas.map(c => (
-                  <tr key={c.id}>
-                    <td><code>{c.numero_cuenta}</code></td>
-                    <td>{c.nombre} {c.apellido}</td>
-                    <td><span className={`badge badge-${c.tipo === 'ahorros' ? 'green' : c.tipo === 'corriente' ? 'blue' : 'yellow'}`}>{c.tipo?.toUpperCase()}</span></td>
-                    <td><strong>S/. {parseFloat(c.saldo).toFixed(2)}</strong></td>
-                    <td>{c.moneda}</td>
-                    <td><span className={`badge badge-${c.activa ? 'green' : 'red'}`}>{c.activa ? 'ACTIVA' : 'SUSPENDIDA'}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {activeTab === 'Cuentas' && (() => {
+        const { paginated, totalItems, totalPages } = getPaginatedData(cuentas);
+        return (
+          <div className="card">
+            <div className="card-title">Cuentas Bancarias ({totalItems})</div>
+            <div className="table-container">
+              <table>
+                <thead><tr><th>Número</th><th>Titular</th><th>Tipo</th><th>Saldo</th><th>Moneda</th><th>Estado</th></tr></thead>
+                <tbody>
+                  {paginated.length === 0
+                    ? <tr><td colSpan="6" style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>Sin cuentas</td></tr>
+                    : paginated.map(c => (
+                    <tr key={c.id}>
+                      <td><code>{c.numero_cuenta}</code></td>
+                      <td>{c.nombre} {c.apellido}</td>
+                      <td><span className={`badge badge-${c.tipo === 'ahorros' ? 'green' : c.tipo === 'corriente' ? 'blue' : 'yellow'}`}>{c.tipo?.toUpperCase()}</span></td>
+                      <td><strong>S/. {parseFloat(c.saldo).toFixed(2)}</strong></td>
+                      <td>{c.moneda}</td>
+                      <td><span className={`badge badge-${c.activa ? 'green' : 'red'}`}>{c.activa ? 'ACTIVA' : 'SUSPENDIDA'}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {renderPagination(totalItems, totalPages)}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
-      {/* Transacciones Tab */}
-      {activeTab === 'Transacciones' && (
-        <div className="card">
-          <div className="card-title">Historial Completo de Transacciones ({transacciones.length})</div>
-          <div className="table-container">
-            <table>
-              <thead><tr><th>ID</th><th>Tipo</th><th>Origen</th><th>Destino</th><th>Monto</th><th>Fecha</th></tr></thead>
-              <tbody>
-                {transacciones.length === 0
-                  ? <tr><td colSpan="6" style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>Sin transacciones</td></tr>
-                  : transacciones.map(t => (
-                  <tr key={t.id}>
-                    <td><span className="badge badge-gray">#{t.id}</span></td>
-                    <td><span className={`badge badge-${t.tipo === 'deposito' ? 'green' : t.tipo === 'retiro' ? 'red' : 'blue'}`}>{t.tipo?.toUpperCase()}</span></td>
-                    <td>{t.origen || <em style={{ color: 'var(--text-muted)' }}>Efectivo</em>}</td>
-                    <td>{t.destino || <em style={{ color: 'var(--text-muted)' }}>Efectivo</em>}</td>
-                    <td><strong>S/. {parseFloat(t.monto).toFixed(2)}</strong></td>
-                    <td>{new Date(t.created_at).toLocaleString('es-PE')}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {activeTab === 'Transacciones' && (() => {
+        const { paginated, totalItems, totalPages } = getPaginatedData(transacciones);
+        return (
+          <div className="card">
+            <div className="card-title">Historial Completo de Transacciones ({totalItems})</div>
+            <div className="table-container">
+              <table>
+                <thead><tr><th>ID</th><th>Tipo</th><th>Origen</th><th>Destino</th><th>Monto</th><th>Fecha</th></tr></thead>
+                <tbody>
+                  {paginated.length === 0
+                    ? <tr><td colSpan="6" style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>Sin transacciones</td></tr>
+                    : paginated.map(t => (
+                    <tr key={t.id}>
+                      <td><span className="badge badge-gray">#{t.id}</span></td>
+                      <td><span className={`badge badge-${t.tipo === 'deposito' ? 'green' : t.tipo === 'retiro' ? 'red' : 'blue'}`}>{t.tipo?.toUpperCase()}</span></td>
+                      <td>{t.origen || <em style={{ color: 'var(--text-muted)' }}>Efectivo</em>}</td>
+                      <td>{t.destino || <em style={{ color: 'var(--text-muted)' }}>Efectivo</em>}</td>
+                      <td><strong>S/. {parseFloat(t.monto).toFixed(2)}</strong></td>
+                      <td>{new Date(t.created_at).toLocaleString('es-PE')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {renderPagination(totalItems, totalPages)}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
-      {/* Créditos Tab */}
-      {activeTab === 'Créditos' && (
-        <div className="card">
-          <div className="card-title">Estado de Créditos y Financiamientos ({creditos.length})</div>
-          <div className="table-container">
-            <table>
-              <thead><tr><th>ID</th><th>Cliente</th><th>Solicitado</th><th>Aprobado</th><th>Plazo</th><th>Tasa</th><th>Estado</th></tr></thead>
-              <tbody>
-                {creditos.length === 0
-                  ? <tr><td colSpan="7" style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>Sin créditos</td></tr>
-                  : creditos.map(c => (
-                  <tr key={c.id}>
-                    <td><span className="badge badge-gray">#{c.id}</span></td>
-                    <td>{c.nombre} {c.apellido}</td>
-                    <td>S/. {parseFloat(c.monto_solicitado).toFixed(2)}</td>
-                    <td>{c.monto_aprobado ? <strong style={{ color: 'var(--primary)' }}>S/. {parseFloat(c.monto_aprobado).toFixed(2)}</strong> : <em style={{ color: 'var(--text-muted)' }}>—</em>}</td>
-                    <td>{c.plazo_meses} meses</td>
-                    <td>{(parseFloat(c.tasa_interes) * 100).toFixed(1)}%</td>
-                    <td><span className={`badge badge-${estadoBadge(c.estado)}`}>{c.estado?.toUpperCase()}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {activeTab === 'Créditos' && (() => {
+        const { paginated, totalItems, totalPages } = getPaginatedData(creditos);
+        return (
+          <div className="card">
+            <div className="card-title">Estado de Créditos y Financiamientos ({totalItems})</div>
+            <div className="table-container">
+              <table>
+                <thead><tr><th>ID</th><th>Cliente</th><th>Solicitado</th><th>Aprobado</th><th>Plazo</th><th>Tasa</th><th>Estado</th></tr></thead>
+                <tbody>
+                  {paginated.length === 0
+                    ? <tr><td colSpan="7" style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>Sin créditos</td></tr>
+                    : paginated.map(c => (
+                    <tr key={c.id}>
+                      <td><span className="badge badge-gray">#{c.id}</span></td>
+                      <td>{c.nombre} {c.apellido}</td>
+                      <td>S/. {parseFloat(c.monto_solicitado).toFixed(2)}</td>
+                      <td>{c.monto_aprobado ? <strong style={{ color: 'var(--primary)' }}>S/. {parseFloat(c.monto_aprobado).toFixed(2)}</strong> : <em style={{ color: 'var(--text-muted)' }}>—</em>}</td>
+                      <td>{c.plazo_meses} meses</td>
+                      <td>{(parseFloat(c.tasa_interes) * 100).toFixed(1)}%</td>
+                      <td><span className={`badge badge-${estadoBadge(c.estado)}`}>{c.estado?.toUpperCase()}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {renderPagination(totalItems, totalPages)}
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

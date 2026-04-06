@@ -866,3 +866,54 @@ tbody tr:hover { background: #fafbfc; }
   margin-top: 2px;
 }
 
+/* ─── Searchable Select Dropdown ────────────────────────────── */
+.search-select-container {
+  position: relative;
+  width: 100%;
+}
+
+.search-select-results {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  max-height: 280px;
+  overflow-y: auto;
+  list-style: none;
+  padding: 4px 0;
+}
+
+.search-select-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background var(--transition);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.search-select-item:hover {
+  background: var(--primary-light);
+}
+
+.search-select-item strong {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.search-select-item span {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.search-select-no-results {
+  padding: 12px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}

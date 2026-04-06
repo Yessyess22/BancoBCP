@@ -15,6 +15,11 @@ export default function ClientesPage() {
   const [editTarget, setEditTarget] = useState(null);
   const [form, setForm]             = useState(emptyForm);
 
+  // Estados para búsqueda y paginación
+  const [searchTerm, setSearchTerm]   = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
   const fetchClientes = async () => {
     setLoading(true);
     try {
@@ -26,8 +31,30 @@ export default function ClientesPage() {
 
   useEffect(() => { fetchClientes(); }, []);
 
-  const flash = (text) => { setMsg(text); setTimeout(() => setMsg(''), 4000); };
+  // Resetear página al buscar
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
+  // Lógica de filtrado
+  const filteredClientes = clientes.filter(c => {
+    const term = searchTerm.toLowerCase();
+    return (
+      c.dni?.toLowerCase().includes(term) ||
+      c.nombre?.toLowerCase().includes(term) ||
+      c.apellido?.toLowerCase().includes(term)
+    );
+  });
+
+  // Lógica de paginación
+  const totalItems = filteredClientes.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedClientes = filteredClientes.slice(startIndex, startIndex + pageSize);
+
+  const flash = (text) => { setMsg(text); setTimeout(() => setMsg(''), 4000); };
+  
+  // ... rest of handers ...
   const handleNew = () => {
     setEditTarget(null);
     setForm(emptyForm);
@@ -140,39 +167,84 @@ export default function ClientesPage() {
       )}
 
       <div className="card">
-        <div className="card-title">Lista de Clientes ({clientes.length})</div>
-        {loading ? <div className="spinner" style={{ margin: '40px auto' }}></div> : (
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>DNI</th>
-                  <th>Nombre Completo</th>
-                  <th>Ubicación</th>
-                  <th>Email / Teléfono</th>
-                  <th style={{ textAlign: 'right' }}>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {clientes.map(c => (
-                  <tr key={c.id}>
-                    <td><span className="badge badge-blue">{c.dni}</span></td>
-                    <td><strong>{c.nombre} {c.apellido}</strong><div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{c.direccion}</div></td>
-                    <td>{c.ubicacion_nombre || <em style={{ color: 'var(--text-muted)' }}>No asignada</em>}</td>
-                    <td>{c.email}<br /><small>{c.telefono}</small></td>
-                    <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                        <button className="btn btn-sm btn-secondary" onClick={() => handleEdit(c)}>✏️</button>
-                        <button className="btn btn-sm btn-danger" onClick={() => handleDelete(c.id)}>🗑️</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="card-header-actions" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+          <div className="card-title" style={{ margin: 0 }}>Lista de Clientes ({totalItems})</div>
+          <div className="search-box">
+            <input 
+              type="text" 
+              placeholder="🔍 Buscar por nombre, apellido o DNI..." 
+              value={searchTerm} 
+              onChange={e => setSearchTerm(e.target.value)}
+              style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', minWidth: '300px' }}
+            />
           </div>
+        </div>
+
+        {loading ? <div className="spinner" style={{ margin: '40px auto' }}></div> : (
+          <>
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>DNI</th>
+                    <th>Nombre Completo</th>
+                    <th>Ubicación</th>
+                    <th>Email / Teléfono</th>
+                    <th style={{ textAlign: 'right' }}>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedClientes.length > 0 ? paginatedClientes.map(c => (
+                    <tr key={c.id}>
+                      <td><span className="badge badge-blue">{c.dni}</span></td>
+                      <td><strong>{c.nombre} {c.apellido}</strong><div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{c.direccion}</div></td>
+                      <td>{c.ubicacion_nombre || <em style={{ color: 'var(--text-muted)' }}>No asignada</em>}</td>
+                      <td>{c.email}<br /><small>{c.telefono}</small></td>
+                      <td style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                          <button className="btn btn-sm btn-secondary" onClick={() => handleEdit(c)}>✏️</button>
+                          <button className="btn btn-sm btn-danger" onClick={() => handleDelete(c.id)}>🗑️</button>
+                        </div>
+                      </td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td colSpan="5" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                        No se encontraron clientes que coincidan con la búsqueda.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {totalPages > 1 && (
+              <div className="pagination-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, padding: '0 10px' }}>
+                <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+                  Mostrando página <strong>{currentPage}</strong> de <strong>{totalPages}</strong> ({totalItems} resultados)
+                </div>
+                <div className="pagination-buttons" style={{ display: 'flex', gap: 8 }}>
+                  <button 
+                    className="btn btn-sm btn-secondary" 
+                    disabled={currentPage === 1} 
+                    onClick={() => setCurrentPage(prev => prev - 1)}
+                  >
+                    ⬅️ Anterior
+                  </button>
+                  <button 
+                    className="btn btn-sm btn-secondary" 
+                    disabled={currentPage === totalPages} 
+                    onClick={() => setCurrentPage(prev => prev + 1)}
+                  >
+                    Siguiente ➡️
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
   );
 }
+

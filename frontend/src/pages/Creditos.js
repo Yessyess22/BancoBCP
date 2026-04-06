@@ -16,6 +16,15 @@ export default function CreditosPage() {
     cliente_id: '', monto_solicitado: '', tasa_interes: '0.15', plazo_meses: '12'
   });
 
+  // Estados para búsqueda y paginación
+  const [searchTerm, setSearchTerm]   = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
+  // Estados para búsqueda de cliente (Autocomplete)
+  const [clientSearchTerm, setClientSearchTerm] = useState('');
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -34,13 +43,54 @@ export default function CreditosPage() {
 
   useEffect(() => { fetchData(); }, []);
 
+  // Resetear página al buscar
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  // Lógica de filtrado para la tabla
+  const filteredCreditos = creditos.filter(c => {
+    const term = searchTerm.toLowerCase();
+    const nombreCompleto = `${c.nombre} ${c.apellido}`.toLowerCase();
+    return (
+      nombreCompleto.includes(term) ||
+      c.dni?.toLowerCase().includes(term) ||
+      c.estado?.toLowerCase().includes(term)
+    );
+  });
+
+  // Lógica de paginación
+  const totalItems = filteredCreditos.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedCreditos = filteredCreditos.slice(startIndex, startIndex + pageSize);
+
+  // Filtrado de clientes para el autocomplete
+  const filteredClients = clientes.filter(c => {
+    const term = clientSearchTerm.toLowerCase();
+    return c.nombre.toLowerCase().includes(term) || 
+           c.apellido.toLowerCase().includes(term) || 
+           c.dni.toLowerCase().includes(term);
+  }).slice(0, 8);
+
+  const selectClient = (c) => {
+    setForm({ ...form, cliente_id: c.id });
+    setClientSearchTerm(`${c.nombre} ${c.apellido} (${c.dni})`);
+    setShowClientDropdown(false);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.cliente_id) {
+      flashMsg('❌ Por favor seleccione un cliente de la lista', false);
+      return;
+    }
     try {
       await axios.post(`${API}/creditos/solicitar`, form);
       flashMsg('✅ Solicitud enviada correctamente', true);
       setShowForm(false);
       setForm({ cliente_id: '', monto_solicitado: '', tasa_interes: '0.15', plazo_meses: '12' });
+      setClientSearchTerm('');
       fetchData();
     } catch (err) {
       flashMsg('❌ Error: ' + (err.response?.data?.message || 'No se pudo enviar'), false);
@@ -115,10 +165,34 @@ export default function CreditosPage() {
             <div className="form-grid">
               <div className="form-group">
                 <label>Cliente Solicitante *</label>
-                <select value={form.cliente_id} onChange={e => setForm({ ...form, cliente_id: e.target.value })} required>
-                  <option value="">-- Seleccionar cliente --</option>
-                  {clientes.map(c => <option key={c.id} value={c.id}>{c.nombre} {c.apellido} ({c.dni})</option>)}
-                </select>
+                <div className="search-select-container">
+                  <input 
+                    type="text" 
+                    placeholder="🔍 Buscar cliente..."
+                    value={clientSearchTerm}
+                    onChange={(e) => {
+                      setClientSearchTerm(e.target.value);
+                      setShowClientDropdown(true);
+                      if (form.cliente_id) setForm({ ...form, cliente_id: '' });
+                    }}
+                    onFocus={() => setShowClientDropdown(true)}
+                    required
+                  />
+                  {showClientDropdown && clientSearchTerm.length > 0 && (
+                    <ul className="search-select-results">
+                      {filteredClients.length === 0 ? (
+                        <li className="search-select-no-results">No hay coincidencias</li>
+                      ) : (
+                        filteredClients.map(c => (
+                          <li key={c.id} className="search-select-item" onClick={() => selectClient(c)}>
+                            <strong>{c.nombre} {c.apellido}</strong>
+                            <span>DNI: {c.dni}</span>
+                          </li>
+                        ))
+                      )}
+                    </ul>
+                  )}
+                </div>
               </div>
               <div className="form-group">
                 <label>Monto Solicitado (S/.)*</label>
@@ -147,45 +221,83 @@ export default function CreditosPage() {
 
       {/* Table */}
       <div className="card">
-        <div className="card-title">Historial de Solicitudes ({creditos.length})</div>
-        {loading ? <div style={{ padding: 40, textAlign: 'center' }}><div className="spinner" style={{ margin: '0 auto' }}></div></div> : (
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th><th>Cliente</th><th>Monto Solicitado</th>
-                  <th>Tasa Anual</th><th>Plazo</th><th>Estado</th><th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {creditos.length === 0
-                  ? <tr><td colSpan="7" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 32 }}>Sin solicitudes de crédito</td></tr>
-                  : creditos.map(c => (
-                  <tr key={c.id}>
-                    <td><span className="badge badge-gray">#{c.id}</span></td>
-                    <td><strong>{c.nombre} {c.apellido}</strong><br /><span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{c.dni}</span></td>
-                    <td><strong>S/. {parseFloat(c.monto_solicitado).toFixed(2)}</strong>
-                      {c.monto_aprobado && <div style={{ fontSize: 11, color: 'var(--primary)' }}>Aprobado: S/. {parseFloat(c.monto_aprobado).toFixed(2)}</div>}
-                    </td>
-                    <td>{(parseFloat(c.tasa_interes) * 100).toFixed(1)}%</td>
-                    <td>{c.plazo_meses} meses</td>
-                    <td><span className={`badge badge-${estadoBadge(c.estado)}`}>{c.estado.toUpperCase()}</span></td>
-                    <td>
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        {c.estado === 'solicitado' && (<>
-                          <button onClick={() => openApproval(c)} className="btn btn-sm btn-success" title="Aprobar">✅ Aprobar</button>
-                          <button onClick={() => handleReject(c.id)} className="btn btn-sm btn-danger" title="Rechazar">❌</button>
-                        </>)}
-                        {c.estado === 'aprobado' && (
-                          <button onClick={() => viewCuotas(c.id)} className="btn btn-sm btn-secondary" title="Ver cuotas">📋 Cuotas</button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="card-header-actions" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+          <div className="card-title" style={{ margin: 0 }}>Historial de Solicitudes ({totalItems})</div>
+          <div className="search-box">
+            <input 
+              type="text" 
+              placeholder="🔍 Buscar por cliente o estado..." 
+              value={searchTerm} 
+              onChange={e => setSearchTerm(e.target.value)}
+              style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', minWidth: '300px' }}
+            />
           </div>
+        </div>
+
+        {loading ? <div style={{ padding: 40, textAlign: 'center' }}><div className="spinner" style={{ margin: '0 auto' }}></div></div> : (
+          <>
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th><th>Cliente</th><th>Monto Solicitado</th>
+                    <th>Tasa Anual</th><th>Plazo</th><th>Estado</th><th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedCreditos.length === 0
+                    ? <tr><td colSpan="7" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 32 }}>Sin solicitudes de crédito</td></tr>
+                    : paginatedCreditos.map(c => (
+                    <tr key={c.id}>
+                      <td><span className="badge badge-gray">#{c.id}</span></td>
+                      <td><strong>{c.nombre} {c.apellido}</strong><br /><span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{c.dni}</span></td>
+                      <td><strong>S/. {parseFloat(c.monto_solicitado).toFixed(2)}</strong>
+                        {c.monto_aprobado && <div style={{ fontSize: 11, color: 'var(--primary)' }}>Aprobado: S/. {parseFloat(c.monto_aprobado).toFixed(2)}</div>}
+                      </td>
+                      <td>{(parseFloat(c.tasa_interes) * 100).toFixed(1)}%</td>
+                      <td>{c.plazo_meses} meses</td>
+                      <td><span className={`badge badge-${estadoBadge(c.estado)}`}>{c.estado.toUpperCase()}</span></td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          {c.estado === 'solicitado' && (<>
+                            <button onClick={() => openApproval(c)} className="btn btn-sm btn-success" title="Aprobar">✅ Aprobar</button>
+                            <button onClick={() => handleReject(c.id)} className="btn btn-sm btn-danger" title="Rechazar">❌</button>
+                          </>)}
+                          {c.estado === 'aprobado' && (
+                            <button onClick={() => viewCuotas(c.id)} className="btn btn-sm btn-secondary" title="Ver cuotas">📋 Cuotas</button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {totalPages > 1 && (
+              <div className="pagination-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, padding: '0 10px' }}>
+                <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+                  Mostrando página <strong>{currentPage}</strong> de <strong>{totalPages}</strong> ({totalItems} resultados)
+                </div>
+                <div className="pagination-buttons" style={{ display: 'flex', gap: 8 }}>
+                  <button 
+                    className="btn btn-sm btn-secondary" 
+                    disabled={currentPage === 1} 
+                    onClick={() => setCurrentPage(prev => prev - 1)}
+                  >
+                    ⬅️ Anterior
+                  </button>
+                  <button 
+                    className="btn btn-sm btn-secondary" 
+                    disabled={currentPage === totalPages} 
+                    onClick={() => setCurrentPage(prev => prev + 1)}
+                  >
+                    Siguiente ➡️
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 

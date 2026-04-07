@@ -4,7 +4,8 @@ const getAll = async () => {
   const result = await pool.query(`
     SELECT c.*, cl.nombre, cl.apellido, cl.dni,
            tc.descripcion AS tipo_descripcion,
-           m.codigo AS moneda_codigo
+           m.codigo AS moneda_codigo,
+           m.simbolo
     FROM cuentas c
     JOIN clientes cl ON c.cliente_id = cl.id
     LEFT JOIN tipos_cuenta tc ON c.tipo_cuenta_id = tc.id

@@ -195,12 +195,12 @@ export default function CreditosPage() {
                 </div>
               </div>
               <div className="form-group">
-                <label>Monto Solicitado (Bs.)*</label>
+                <label>Monto Solicitado *</label>
                 <input 
                   type="number" 
                   step="0.01" 
                   min="100" 
-                  title="Monto mínimo 100 Bs."
+                  title="Monto mínimo 100"
                   value={form.monto_solicitado}
                   onChange={e => setForm({ ...form, monto_solicitado: e.target.value })} 
                   required 
@@ -322,7 +322,7 @@ export default function CreditosPage() {
                 Monto solicitado: <strong>Bs. {parseFloat(approvalModal.monto_solicitado).toFixed(2)}</strong>
               </p>
               <div className="form-group">
-                <label>Monto a Aprobar (Bs.) *</label>
+                <label>Monto a Aprobar *</label>
                 <input 
                   type="number" 
                   step="0.01" 

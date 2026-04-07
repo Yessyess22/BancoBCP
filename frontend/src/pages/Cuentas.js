@@ -154,7 +154,7 @@ export default function CuentasPage() {
                 </select>
               </div>
               <div className="form-group">
-                <label>Saldo Inicial (Bs.)</label>
+                <label>Saldo Inicial</label>
                 <input 
                   type="number" 
                   step="0.01" 
@@ -209,7 +209,7 @@ export default function CuentasPage() {
                       <td><code>{c.numero_cuenta}</code></td>
                       <td><strong>{c.nombre} {c.apellido}</strong><div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{c.dni}</div></td>
                       <td><span className="badge badge-blue">{c.tipo_descripcion || c.tipo}</span></td>
-                      <td><strong>Bs. {parseFloat(c.saldo).toFixed(2)}</strong></td>
+                      <td><strong>{c.simbolo || 'Bs.'} {parseFloat(c.saldo).toFixed(2)}</strong></td>
                       <td>{c.moneda_codigo || c.moneda}</td>
                       <td><span className={`badge badge-${c.activa ? 'green' : 'red'}`}>{c.activa ? 'ACTIVA' : 'SUSPENDIDA'}</span></td>
                       <td style={{ textAlign: 'center' }}>

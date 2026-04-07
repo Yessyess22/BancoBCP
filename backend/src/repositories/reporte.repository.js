@@ -17,10 +17,13 @@ const getRecentTransactions = async (limit = 10) => {
     SELECT 
       t.id, t.tipo, t.monto, t.descripcion, t.created_at,
       co.numero_cuenta AS origen,
-      cd.numero_cuenta AS destino
+      cd.numero_cuenta AS destino,
+      COALESCE(m_origen.simbolo, m_destino.simbolo) AS simbolo
     FROM transacciones t
     LEFT JOIN cuentas co ON t.cuenta_origen_id  = co.id
     LEFT JOIN cuentas cd ON t.cuenta_destino_id = cd.id
+    LEFT JOIN monedas m_origen ON co.moneda_id = m_origen.id
+    LEFT JOIN monedas m_destino ON cd.moneda_id = m_destino.id
     ORDER BY t.created_at DESC
     LIMIT $1
   `, [limit]);
@@ -33,7 +36,8 @@ const getConsolidatedData = async () => {
       c.id, c.numero_cuenta, c.saldo, c.activa, c.created_at,
       cl.nombre, cl.apellido, cl.dni,
       tc.descripcion AS tipo,
-      m.codigo AS moneda
+      m.codigo AS moneda,
+      m.simbolo
     FROM cuentas c 
     JOIN clientes cl ON c.cliente_id = cl.id
     LEFT JOIN tipos_cuenta tc ON c.tipo_cuenta_id = tc.id
@@ -45,10 +49,13 @@ const getConsolidatedData = async () => {
     SELECT 
       t.id, t.tipo, t.monto, t.descripcion, t.created_at,
       co.numero_cuenta AS origen,
-      cd.numero_cuenta AS destino
+      cd.numero_cuenta AS destino,
+      COALESCE(m_origen.simbolo, m_destino.simbolo) AS simbolo
     FROM transacciones t
     LEFT JOIN cuentas co ON t.cuenta_origen_id  = co.id
     LEFT JOIN cuentas cd ON t.cuenta_destino_id = cd.id
+    LEFT JOIN monedas m_origen ON co.moneda_id = m_origen.id
+    LEFT JOIN monedas m_destino ON cd.moneda_id = m_destino.id
     ORDER BY t.created_at DESC
   `);
 

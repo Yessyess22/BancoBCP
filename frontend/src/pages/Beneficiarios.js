@@ -84,86 +84,125 @@ export default function BeneficiariosPage() {
   };
 
   return (
-    <div className="page-container" style={{ padding: '30px', maxWidth: '1000px', margin: '0 auto' }}>
-      <h2 style={{ marginBottom: '30px', color: '#1a365d', fontSize: '2em' }}>Agenda de Beneficiarios</h2>
+    <div className="page-content">
+      <div className="page-header">
+        <div>
+          <h2>Agenda de Beneficiarios</h2>
+          <p className="page-subtitle">Gestiona tus contactos frecuentes para transferencias inmediatas</p>
+        </div>
+      </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(400px, 1fr) minmax(400px, 1fr)', gap: '40px' }}>
-        {/* Formulario */}
-        <div style={{ background: 'white', padding: '30px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-            <h3 style={{ marginTop: 0, color: '#2d3748', fontSize: '1.5em' }}>Nuevo Contacto</h3>
-            {mensaje && (
-                <div style={{ padding: '15px', marginBottom: '20px', borderRadius: '6px', backgroundColor: mensaje.tipo === 'error' ? '#fee2e2' : '#dcfce7', color: mensaje.tipo === 'error' ? '#991b1b' : '#166534', fontSize: '1.05em' }}>
-                    {mensaje.texto}
-                </div>
-            )}
+      {mensaje && (
+        <div className={`alert ${mensaje.tipo === 'error' ? 'alert-error' : 'alert-success'}`}>
+          {mensaje.tipo === 'error' ? '❌' : '✅'} {mensaje.texto}
+        </div>
+      )}
+
+      <div className="dashboard-grid">
+        <div className="dashboard-left">
+          <div className="card">
+            <div className="card-title">Nuevo Contacto</div>
             <form onSubmit={handleSubmit}>
-                <div className="form-group" style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '1.1em', fontWeight: 'bold', color: '#4a5568' }}>Entidad Financiera</label>
-                    <select 
-                       name="entidad_id" 
-                       value={formData.entidad_id} 
-                       onChange={handleChange}
-                       style={{ width: '100%', padding: '12px', borderRadius: '6px', border: '1px solid #cbd5e0', fontSize: '1.05em' }}
-                       required
-                    >
-                        {entidades.map(ent => <option key={ent.id} value={ent.id}>{ent.nombre}</option>)}
-                    </select>
+              <div className="form-group" style={{ marginBottom: 16 }}>
+                <label>Entidad Financiera</label>
+                <select 
+                  name="entidad_id" 
+                  value={formData.entidad_id} 
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="" disabled>Seleccione un banco...</option>
+                  {entidades.map(ent => (
+                    <option key={ent.id} value={ent.id}>{ent.nombre}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Alias / Nombre</label>
+                  <input 
+                    type="text" 
+                    name="alias" 
+                    pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
+                    title="Solo se permiten letras y espacios"
+                    value={formData.alias} 
+                    onChange={handleChange}
+                    placeholder="Ej. Mamá, Juan Pérez..."
+                    required
+                    maxLength={50}
+                  />
                 </div>
-                <div className="form-group" style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '1.1em', fontWeight: 'bold', color: '#4a5568' }}>Alias (Ej. Mamá)</label>
-                    <input 
-                       type="text" 
-                       name="alias" 
-                       pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
-                       title="Solo se permiten letras y espacios"
-                       value={formData.alias} 
-                       onChange={handleChange}
-                       placeholder="Nombre corto de referencia"
-                       style={{ width: '100%', padding: '12px', borderRadius: '6px', border: '1px solid #cbd5e0', boxSizing: 'border-box', fontSize: '1.05em' }}
-                       required
-                       maxLength={50}
-                    />
+                <div className="form-group">
+                  <label>Número de Cuenta</label>
+                  <input 
+                    type="text" 
+                    name="cuenta" 
+                    pattern="[0-9]+"
+                    title="Solo se permiten números"
+                    inputMode="numeric"
+                    value={formData.cuenta} 
+                    onChange={e => setFormData({ ...formData, cuenta: e.target.value.replace(/\D/g, '') })}
+                    placeholder="Solo dígitos"
+                    required
+                    maxLength={20}
+                  />
                 </div>
-                <div className="form-group" style={{ marginBottom: '25px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '1.1em', fontWeight: 'bold', color: '#4a5568' }}>Número de Cuenta</label>
-                    <input 
-                       type="text" 
-                       name="cuenta" 
-                       pattern="[0-9]+"
-                       title="Solo se permiten números"
-                       inputMode="numeric"
-                       value={formData.cuenta} 
-                       onChange={e => setFormData({ ...formData, cuenta: e.target.value.replace(/\D/g, '') })}
-                       placeholder="Ej. 4500123984"
-                       style={{ width: '100%', padding: '12px', borderRadius: '6px', border: '1px solid #cbd5e0', boxSizing: 'border-box', fontSize: '1.05em' }}
-                       required
-                       maxLength={20}
-                    />
-                </div>
-                <button type="submit" style={{ width: '100%', padding: '14px', backgroundColor: 'var(--primary)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.15em', transition: 'background 0.2s' }} 
-                  onMouseOver={(e) => e.target.style.backgroundColor = 'var(--primary-dark)'}
-                  onMouseOut={(e) => e.target.style.backgroundColor = 'var(--primary)'}>
-                    Guardar Contacto
+              </div>
+
+              <div style={{ marginTop: 24 }}>
+                <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+                  ➕ Guardar en Agenda
                 </button>
+              </div>
             </form>
+          </div>
+
+          <div className="card" style={{ background: 'var(--info-light)', borderColor: 'rgba(74,144,217,0.2)' }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <div style={{ fontSize: 24 }}>💡</div>
+              <div style={{ fontSize: 13, color: 'var(--info)', lineHeight: 1.4 }}>
+                <strong>Tip de seguridad:</strong> Verifica siempre el número de cuenta antes de guardar. 
+                Los contactos de la agenda aparecerán automáticamente al realizar transferencias.
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Lista */}
-        <div style={{ background: 'white', padding: '30px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-            <h3 style={{ marginTop: 0, color: '#2d3748', fontSize: '1.5em' }}>Contactos Guardados</h3>
+        <div className="dashboard-right">
+          <div className="card">
+            <div className="card-title">
+              Contactos Guardados
+              <span className="badge badge-gray">{beneficiarios.length}</span>
+            </div>
+            
             {beneficiarios.length === 0 ? (
-                <p style={{ color: '#718096', fontStyle: 'italic', textAlign: 'center', marginTop: '40px', fontSize: '1.1em' }}>No hay contactos registrados para este cliente.</p>
+              <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.5 }}>📇</div>
+                <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Tu agenda está vacía.</p>
+              </div>
             ) : (
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0, maxHeight: '450px', overflowY: 'auto' }}>
-                    {beneficiarios.map(b => (
-                        <li key={b.id} style={{ padding: '16px', borderBottom: '1px solid #edf2f7', display: 'flex', flexDirection: 'column' }}>
-                            <strong style={{ fontSize: '1.25em', color: '#3182ce' }}>#{b.id} - {b.alias_contacto}</strong>
-                            <span style={{ fontSize: '1em', color: '#718096', marginTop: '6px' }}>🏦 {b.entidad_nombre}</span>
-                            <span style={{ fontSize: '1.05em', color: '#4a5568', marginTop: '4px', fontWeight: '500' }}>💳 {b.numero_cuenta}</span>
-                        </li>
-                    ))}
-                </ul>
+              <div className="tx-list">
+                {beneficiarios.map(b => (
+                  <div key={b.id} className="tx-item" style={{ borderBottom: '1px solid var(--border)', paddingBottom: 12, marginBottom: 4 }}>
+                    <div className="tx-icon" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
+                      👤
+                    </div>
+                    <div className="tx-info">
+                      <div className="tx-name">{b.alias_contacto}</div>
+                      <div className="tx-desc">🏦 {b.entidad_nombre}</div>
+                      <div style={{ fontSize: 11, fontVariantNumeric: 'tabular-nums', marginTop: 2, color: 'var(--text-primary)', fontWeight: 600 }}>
+                        💳 {b.numero_cuenta}
+                      </div>
+                    </div>
+                    <div className="badge badge-gray" style={{ alignSelf: 'flex-start', fontSize: 9 }}>
+                      ID: {b.id}
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
+          </div>
         </div>
       </div>
     </div>

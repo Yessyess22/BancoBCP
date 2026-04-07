@@ -4,10 +4,15 @@ const findAll = async () => {
   const { rows } = await pool.query(`
     SELECT t.*,
       co.numero_cuenta AS cuenta_origen,
-      cd.numero_cuenta AS cuenta_destino
+      cd.numero_cuenta AS cuenta_destino,
+      m_origen.simbolo AS simbolo_origen,
+      m_destino.simbolo AS simbolo_destino,
+      COALESCE(m_origen.simbolo, m_destino.simbolo) AS simbolo
     FROM transacciones t
     LEFT JOIN cuentas co ON t.cuenta_origen_id = co.id
     LEFT JOIN cuentas cd ON t.cuenta_destino_id = cd.id
+    LEFT JOIN monedas m_origen ON co.moneda_id = m_origen.id
+    LEFT JOIN monedas m_destino ON cd.moneda_id = m_destino.id
     ORDER BY t.created_at DESC LIMIT 100
   `);
   return rows;

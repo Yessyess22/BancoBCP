@@ -6,11 +6,21 @@ const API = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 export default function TransaccionesPage() {
   const [transacciones, setTransacciones] = useState([]);
   const [cuentas, setCuentas]             = useState([]);
+  const [beneficiarios, setBeneficiarios] = useState([]);
   const [loading, setLoading]             = useState(true);
   const [tipoOpe, setTipoOpe]             = useState('deposito'); // Renombrado para evitar conflicto con filtro
   const [showForm, setShowForm]           = useState(false);
   const [msg, setMsg]                     = useState('');
-  const [form, setForm] = useState({ cuenta_origen_id: '', cuenta_destino_id: '', monto: '', descripcion: '' });
+  const [form, setForm] = useState({ 
+    cuenta_origen_id: '', 
+    cuenta_destino_id: '', 
+    monto: '', 
+    descripcion: '',
+    banco_nombre: '',
+    cuenta_externa: ''
+  });
+  const [isInterbank, setIsInterbank]     = useState(false);
+  const [entidades, setEntidades]         = useState([]);
 
   // Estados para búsqueda y paginación
   const [searchTerm, setSearchTerm]   = useState('');
@@ -26,12 +36,16 @@ export default function TransaccionesPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [resTrans, resCuentas] = await Promise.all([
+      const [resTrans, resCuentas, resBen, resEnt] = await Promise.all([
         axios.get(`${API}/transacciones`),
         axios.get(`${API}/cuentas`),
+        axios.get(`${API}/beneficiarios?cliente_id=1`), 
+        axios.get(`${API}/beneficiarios/entidades`),
       ]);
       setTransacciones(Array.isArray(resTrans.data) ? resTrans.data : (resTrans.data?.data || []));
       setCuentas(Array.isArray(resCuentas.data) ? resCuentas.data : (resCuentas.data?.data || []));
+      setBeneficiarios(resBen.data?.data || []);
+      setEntidades(resEnt.data?.data || []);
     } catch (err) {
       console.error(err);
     }
@@ -57,11 +71,23 @@ export default function TransaccionesPage() {
     }
 
     try {
-      const payload = { ...form, monto: parseFloat(form.monto) };
+      const payload = { 
+        ...form, 
+        monto: parseFloat(form.monto), 
+        cuenta_destino_id: isInterbank ? null : form.cuenta_destino_id 
+      };
       await axios.post(`${API}/transacciones/${tipoOpe}`, payload);
       flash(`✅ ${tipoOpe.charAt(0).toUpperCase() + tipoOpe.slice(1)} procesado exitosamente`);
       setShowForm(false);
-      setForm({ cuenta_origen_id: '', cuenta_destino_id: '', monto: '', descripcion: '' });
+      setForm({ 
+        cuenta_origen_id: '', 
+        cuenta_destino_id: '', 
+        monto: '', 
+        descripcion: '',
+        banco_nombre: '',
+        cuenta_externa: ''
+      });
+      setIsInterbank(false);
       setOriginSearch(''); setDestSearch('');
       fetchData();
     } catch (err) {
@@ -69,8 +95,8 @@ export default function TransaccionesPage() {
     }
   };
 
-  // Lógica de filtrado para Autocomplete
-  const filterAccounts = (term) => {
+  // Lógica de filtrado para Autocomplete (Orígenes - solo cuentas internas)
+  const filterOriginAccounts = (term) => {
     const t = term.toLowerCase();
     return cuentas.filter(c => c.activa && (
       c.numero_cuenta.toLowerCase().includes(t) ||
@@ -80,15 +106,60 @@ export default function TransaccionesPage() {
     )).slice(0, 8);
   };
 
+  // Lógica de filtrado para Autocomplete (Destinos - incluye beneficiarios)
+  const filterDestinations = (term) => {
+    const t = term.toLowerCase();
+    
+    // Buscar en cuentas internas
+    const internal = cuentas.filter(c => c.activa && (
+      c.numero_cuenta.toLowerCase().includes(t) ||
+      `${c.nombre} ${c.apellido}`.toLowerCase().includes(t)
+    )).map(c => ({ ...c, isBeneficiary: false }));
+
+    // Buscar en agenda de beneficiarios
+    const ben = beneficiarios.filter(b => (
+      b.alias_contacto.toLowerCase().includes(t) ||
+      b.numero_cuenta.toLowerCase().includes(t)
+    )).map(b => ({
+      id: null, // El ID se buscará al seleccionar
+      numero_cuenta: b.numero_cuenta,
+      nombre: b.alias_contacto,
+      apellido: `(${b.entidad_nombre})`,
+      isBeneficiary: true
+    }));
+
+    // Combinar (con límite)
+    return [...internal, ...ben].slice(0, 10);
+  };
+
   const selectOrigin = (c) => {
     setForm({ ...form, cuenta_origen_id: c.id });
     setOriginSearch(`${c.numero_cuenta} — ${c.nombre} ${c.apellido}`);
     setShowOriginDrop(false);
   };
 
-  const selectDest = (c) => {
-    setForm({ ...form, cuenta_destino_id: c.id });
-    setDestSearch(`${c.numero_cuenta} — ${c.nombre} ${c.apellido}`);
+  const selectDest = (item) => {
+    let finalId = item.id;
+    
+    // Si es un beneficiario, buscar si el número de cuenta corresponde a una cuenta interna
+    if (item.isBeneficiary) {
+      const match = cuentas.find(c => c.numero_cuenta === item.numero_cuenta);
+      if (match) {
+        finalId = match.id;
+        setIsInterbank(false);
+      } else {
+        finalId = null;
+        setIsInterbank(true);
+      }
+    }
+
+    setForm({ 
+      ...form, 
+      cuenta_destino_id: finalId,
+      banco_nombre: item.isBeneficiary ? item.apellido.replace(/[()]/g, '') : 'Banco BCP',
+      cuenta_externa: item.isBeneficiary ? item.numero_cuenta : ''
+    });
+    setDestSearch(`${item.numero_cuenta} — ${item.nombre} ${item.apellido}`);
     setShowDestDrop(false);
   };
 
@@ -165,13 +236,36 @@ export default function TransaccionesPage() {
                 className={`type-toggle-btn ${tipoOpe === t ? 'active' : ''}`}
                 onClick={() => { 
                   setTipoOpe(t); 
-                  setForm({ cuenta_origen_id: '', cuenta_destino_id: '', monto: '', descripcion: '' });
+                  setForm({ 
+                    cuenta_origen_id: '', 
+                    cuenta_destino_id: '', 
+                    monto: '', 
+                    descripcion: '',
+                    banco_nombre: '',
+                    cuenta_externa: ''
+                  });
                   setOriginSearch(''); setDestSearch('');
+                  setIsInterbank(false);
                 }}>
                 {t === 'deposito' ? '⬆️' : t === 'retiro' ? '⬇️' : '↔️'} {t.toUpperCase()}
               </button>
             ))}
           </div>
+
+          {tipoOpe === 'transferencia' && (
+            <div className="type-toggle-group" style={{ marginTop: -8, marginBottom: 16 }}>
+              <button type="button" 
+                className={`type-toggle-btn ${!isInterbank ? 'active' : ''}`}
+                onClick={() => { setIsInterbank(false); setForm({...form, cuenta_destino_id: ''}); setDestSearch(''); }}>
+                🏦 Cuentas BCP
+              </button>
+              <button type="button" 
+                className={`type-toggle-btn ${isInterbank ? 'active' : ''}`}
+                onClick={() => { setIsInterbank(true); setForm({...form, cuenta_destino_id: null}); setDestSearch(''); }}>
+                👤 Otros Bancos
+              </button>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit}>
             <div className="form-grid">
@@ -193,13 +287,13 @@ export default function TransaccionesPage() {
                     />
                     {showOriginDrop && originSearch.length > 0 && (
                       <ul className="search-select-results">
-                        {filterAccounts(originSearch).length === 0 ? (
+                        {filterOriginAccounts(originSearch).length === 0 ? (
                           <li className="search-select-no-results">No hay coincidencias</li>
                         ) : (
-                          filterAccounts(originSearch).map(c => (
+                          filterOriginAccounts(originSearch).map(c => (
                             <li key={c.id} className="search-select-item" onClick={() => selectOrigin(c)}>
                               <strong>{c.numero_cuenta} — {c.nombre} {c.apellido}</strong>
-                              <span>Saldo: Bs. {parseFloat(c.saldo).toFixed(2)} | DNI: {c.dni}</span>
+                              <span>Saldo: {c.simbolo || 'Bs.'} {parseFloat(c.saldo).toFixed(2)} | DNI: {c.dni}</span>
                             </li>
                           ))
                         )}
@@ -211,38 +305,63 @@ export default function TransaccionesPage() {
               {(tipoOpe === 'deposito' || tipoOpe === 'transferencia') && (
                 <div className="form-group">
                   <label>Cuenta de Destino *</label>
-                  <div className="search-select-container">
-                    <input 
-                      type="text" 
-                      placeholder="🔍 Buscar cuenta destino..."
-                      value={destSearch}
-                      onChange={(e) => {
-                        setDestSearch(e.target.value);
-                        setShowDestDrop(true);
-                        if (form.cuenta_destino_id) setForm({ ...form, cuenta_destino_id: '' });
-                      }}
-                      onFocus={() => setShowDestDrop(true)}
-                      required
-                    />
-                    {showDestDrop && destSearch.length > 0 && (
-                      <ul className="search-select-results">
-                        {filterAccounts(destSearch).length === 0 ? (
-                          <li className="search-select-no-results">No hay coincidencias</li>
-                        ) : (
-                          filterAccounts(destSearch).map(c => (
-                            <li key={c.id} className="search-select-item" onClick={() => selectDest(c)}>
-                              <strong>{c.numero_cuenta} — {c.nombre} {c.apellido}</strong>
-                              <span>DNI: {c.dni}</span>
-                            </li>
-                          ))
-                        )}
-                      </ul>
-                    )}
-                  </div>
+                  {!isInterbank ? (
+                    <div className="search-select-container">
+                      <input 
+                        type="text" 
+                        placeholder="🔍 Buscar cuenta BCP o Beneficiario..."
+                        value={destSearch}
+                        onChange={(e) => {
+                          setDestSearch(e.target.value);
+                          setShowDestDrop(true);
+                          if (form.cuenta_destino_id) setForm({ ...form, cuenta_destino_id: '' });
+                        }}
+                        onFocus={() => setShowDestDrop(true)}
+                        required
+                      />
+                      {showDestDrop && destSearch.length > 0 && (
+                        <ul className="search-select-results">
+                          {filterDestinations(destSearch).length === 0 ? (
+                            <li className="search-select-no-results">No hay coincidencias</li>
+                          ) : (
+                            filterDestinations(destSearch).map((item, idx) => (
+                              <li key={item.id || idx} className="search-select-item" onClick={() => selectDest(item)}>
+                                <strong>
+                                  {item.isBeneficiary ? '👤 ' : '🏦 '} 
+                                  {item.numero_cuenta} — {item.nombre} {item.apellido}
+                                </strong>
+                                <span>{item.isBeneficiary ? 'Contacto Agenda' : `DNI: ${item.dni}`}</span>
+                              </li>
+                            ))
+                          )}
+                        </ul>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="form-grid" style={{ gridTemplateColumns: '1.2fr 1.8fr', gap: 10 }}>
+                      <select 
+                        value={form.banco_nombre}
+                        onChange={e => setForm({...form, banco_nombre: e.target.value})}
+                        required
+                      >
+                        <option value="">Banco...</option>
+                        {entidades.map(ent => (
+                          <option key={ent.id} value={ent.nombre}>{ent.nombre}</option>
+                        ))}
+                      </select>
+                      <input 
+                        type="text" 
+                        placeholder="Nro. Cuenta Externas"
+                        value={form.cuenta_externa}
+                        onChange={e => setForm({...form, cuenta_externa: e.target.value})}
+                        required
+                      />
+                    </div>
+                  )}
                 </div>
               )}
               <div className="form-group">
-                <label>Monto de la Operación (Bs.) *</label>
+                <label>Monto de la Operación *</label>
                 <input 
                   type="number" 
                   step="0.01" 
@@ -320,7 +439,7 @@ export default function TransaccionesPage() {
                       <td>{t.cuenta_destino ? <code style={{ fontSize: 11 }}>{t.cuenta_destino}</code> : <em style={{ color: 'var(--text-muted)', fontSize: 12 }}>Efectivo</em>}</td>
                       <td>
                         <strong style={{ color: t.tipo === 'deposito' ? 'var(--primary-dark)' : t.tipo === 'retiro' ? 'var(--danger)' : 'var(--info)' }}>
-                          Bs. {parseFloat(t.monto).toFixed(2)}
+                          {t.simbolo || 'Bs.'} {parseFloat(t.monto).toFixed(2)}
                         </strong>
                       </td>
                       <td style={{ color: 'var(--text-secondary)', fontSize: 12 }}>{t.descripcion || <em>—</em>}</td>

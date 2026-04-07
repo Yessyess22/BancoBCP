@@ -48,7 +48,7 @@ const retirar = async ({ cuenta_origen_id, monto, descripcion }) => {
   }
 };
 
-const transferir = async ({ cuenta_origen_id, cuenta_destino_id, monto, descripcion }) => {
+const transferir = async ({ cuenta_origen_id, cuenta_destino_id, monto, descripcion, banco_nombre, cuenta_externa }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -56,15 +56,26 @@ const transferir = async ({ cuenta_origen_id, cuenta_destino_id, monto, descripc
     if (!origen) throw Object.assign(new Error('Cuenta origen no encontrada'), { status: 404 });
     if (parseFloat(origen.saldo) < monto) throw Object.assign(new Error('Saldo insuficiente'), { status: 400 });
 
+    // Descontar origen
     await repo.actualizarSaldo(client, cuenta_origen_id, -monto);
-    await repo.actualizarSaldo(client, cuenta_destino_id, monto);
+
+    // Si hay destino interno, abonar
+    if (cuenta_destino_id) {
+      await repo.actualizarSaldo(client, cuenta_destino_id, monto);
+    }
+
+    // Preparar descripción con info de Interbancaria si aplica
+    let finalDesc = descripcion || '';
+    if (!cuenta_destino_id && banco_nombre && cuenta_externa) {
+      finalDesc = `INTERBANCARIA | ${banco_nombre} | Cuenta: ${cuenta_externa} | ${finalDesc}`;
+    }
 
     const tx = await repo.insertarTransaccion(client, {
       cuenta_origen_id,
-      cuenta_destino_id,
+      cuenta_destino_id: cuenta_destino_id || null,
       tipo: 'transferencia',
       monto,
-      descripcion,
+      descripcion: finalDesc,
     });
     await client.query('COMMIT');
     return tx;

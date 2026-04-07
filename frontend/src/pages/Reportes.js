@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 const API = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -66,21 +66,21 @@ export default function ReportesPage() {
       doc.text('Indicadores Clave', 14, 40);
       doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
       doc.text(`Total Clientes: ${stats?.total_clientes || 0}`, 14, 48);
-      doc.text(`Saldo Total: Bs. ${parseFloat(stats?.saldo_total || 0).toFixed(2)}`, 80, 48);
+      doc.text(`Saldo Total (Ref. Bs.): ${parseFloat(stats?.saldo_total || 0).toFixed(2)}`, 80, 48);
       doc.text(`Créditos Aprobados: ${stats?.creditos_activos || 0}`, 14, 55);
-      doc.text(`Cartera Créditos: Bs. ${parseFloat(stats?.cartera_creditos || 0).toFixed(2)}`, 80, 55);
+      doc.text(`Cartera Créditos (Ref. Bs.): ${parseFloat(stats?.cartera_creditos || 0).toFixed(2)}`, 80, 55);
 
       // ── Cuentas
       doc.setFontSize(12); doc.setFont('helvetica', 'bold');
       doc.text('Cuentas Bancarias', 14, 68);
-      doc.autoTable({
+      autoTable(doc, {
         startY: 70,
         head: [['Número Cuenta', 'Titular', 'Tipo', 'Saldo', 'Moneda', 'Estado']],
-        body: cuentas.map(c => [
+        body: (cuentas || []).map(c => [
           c.numero_cuenta,
           `${c.nombre} ${c.apellido}`,
           c.tipo?.toUpperCase(),
-          `Bs. ${parseFloat(c.saldo).toFixed(2)}`,
+          `${c.simbolo || 'Bs.'} ${parseFloat(c.saldo).toFixed(2)}`,
           c.moneda,
           c.activa ? 'ACTIVA' : 'SUSPENDIDA',
         ]),
@@ -90,18 +90,18 @@ export default function ReportesPage() {
       });
 
       // ── Transacciones
-      const y1 = doc.lastAutoTable.finalY + 10;
+      const y1 = (doc.lastAutoTable?.finalY || 70) + 10;
       doc.setFontSize(12); doc.setFont('helvetica', 'bold');
       doc.text('Historial de Transacciones', 14, y1);
-      doc.autoTable({
+      autoTable(doc, {
         startY: y1 + 2,
         head: [['ID', 'Tipo', 'Origen', 'Destino', 'Monto', 'Fecha']],
-        body: transacciones.slice(0, 100).map(t => [
+        body: (transacciones || []).slice(0, 100).map(t => [
           `#${t.id}`,
           t.tipo?.toUpperCase(),
           t.origen || 'Efectivo',
           t.destino || 'Efectivo',
-          `Bs. ${parseFloat(t.monto).toFixed(2)}`,
+          `${t.simbolo || 'Bs.'} ${parseFloat(t.monto).toFixed(2)}`,
           new Date(t.created_at).toLocaleDateString('es-PE'),
         ]),
         headStyles: { fillColor: [74, 144, 217], fontSize: 9 },
@@ -119,10 +119,10 @@ export default function ReportesPage() {
       doc.setTextColor(0, 0, 0);
       doc.setFontSize(12); doc.setFont('helvetica', 'bold');
       doc.text('Estado de Créditos', 14, 26);
-      doc.autoTable({
+      autoTable(doc, {
         startY: 28,
         head: [['Cliente', 'DNI', 'Monto Solicitado', 'Monto Aprobado', 'Plazo', 'Tasa', 'Estado']],
-        body: creditos.map(c => [
+        body: (creditos || []).map(c => [
           `${c.nombre} ${c.apellido}`,
           c.dni || '—',
           `Bs. ${parseFloat(c.monto_solicitado).toFixed(2)}`,
@@ -245,7 +245,7 @@ export default function ReportesPage() {
                       <td><span className={`badge badge-${t.tipo === 'deposito' ? 'green' : t.tipo === 'retiro' ? 'red' : 'blue'}`}>{t.tipo?.toUpperCase()}</span></td>
                       <td>{t.origen || <em style={{ color: 'var(--text-muted)' }}>Efectivo</em>}</td>
                       <td>{t.destino || <em style={{ color: 'var(--text-muted)' }}>Efectivo</em>}</td>
-                      <td><strong>Bs. {parseFloat(t.monto).toFixed(2)}</strong></td>
+                      <td><strong>{t.simbolo || 'Bs.'} {parseFloat(t.monto).toFixed(2)}</strong></td>
                       <td>{new Date(t.created_at).toLocaleString('es-PE')}</td>
                     </tr>
                   ))}
@@ -273,7 +273,7 @@ export default function ReportesPage() {
                       <td><code>{c.numero_cuenta}</code></td>
                       <td>{c.nombre} {c.apellido}</td>
                       <td><span className={`badge badge-${c.tipo === 'ahorros' ? 'green' : c.tipo === 'corriente' ? 'blue' : 'yellow'}`}>{c.tipo?.toUpperCase()}</span></td>
-                      <td><strong>Bs. {parseFloat(c.saldo).toFixed(2)}</strong></td>
+                      <td><strong>{c.simbolo || 'Bs.'} {parseFloat(c.saldo).toFixed(2)}</strong></td>
                       <td>{c.moneda}</td>
                       <td><span className={`badge badge-${c.activa ? 'green' : 'red'}`}>{c.activa ? 'ACTIVA' : 'SUSPENDIDA'}</span></td>
                     </tr>
@@ -303,7 +303,7 @@ export default function ReportesPage() {
                       <td><span className={`badge badge-${t.tipo === 'deposito' ? 'green' : t.tipo === 'retiro' ? 'red' : 'blue'}`}>{t.tipo?.toUpperCase()}</span></td>
                       <td>{t.origen || <em style={{ color: 'var(--text-muted)' }}>Efectivo</em>}</td>
                       <td>{t.destino || <em style={{ color: 'var(--text-muted)' }}>Efectivo</em>}</td>
-                      <td><strong>Bs. {parseFloat(t.monto).toFixed(2)}</strong></td>
+                      <td><strong>{t.simbolo || 'Bs.'} {parseFloat(t.monto).toFixed(2)}</strong></td>
                       <td>{new Date(t.created_at).toLocaleString('es-PE')}</td>
                     </tr>
                   ))}

@@ -164,7 +164,7 @@ export default function Dashboard() {
                     <div className="tx-desc">{new Date(tx.created_at).toLocaleString('es-PE')}</div>
                   </div>
                   <div className={`tx-amount ${tx.tipo === 'deposito' ? 'income' : 'expense'}`}>
-                    {tx.tipo === 'deposito' ? '+' : '-'}Bs. {parseFloat(tx.monto).toFixed(2)}
+                    {tx.tipo === 'deposito' ? '+' : '-'}{tx.simbolo || 'Bs.'} {parseFloat(tx.monto).toFixed(2)}
                   </div>
                 </div>
               ))}
@@ -199,7 +199,7 @@ export default function Dashboard() {
                     </span>
                   </div>
                 </div>
-                <div className="account-mini-balance">Bs. {parseFloat(c.saldo).toFixed(2)}</div>
+                <div className="account-mini-balance">{c.simbolo || 'Bs.'} {parseFloat(c.saldo).toFixed(2)}</div>
               </div>
             ))}
           </div>

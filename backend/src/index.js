@@ -12,6 +12,8 @@ const creditoRoutes     = require('./routes/credito.routes');
 const reporteRoutes     = require('./routes/reporte.routes');
 const parametroRoutes   = require('./routes/parametro.routes');
 const beneficiarioRoutes = require('./routes/beneficiarios.routes');
+const tarjetaRoutes      = require('./routes/tarjeta.routes');
+const reclamoRoutes      = require('./routes/reclamo.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -42,6 +44,8 @@ app.use('/api/transacciones', verifyToken, transaccionRoutes);
 app.use('/api/creditos',      verifyToken, creditoRoutes);
 app.use('/api/reportes',      verifyToken, reporteRoutes);
 app.use('/api/beneficiarios', verifyToken, beneficiarioRoutes);
+app.use('/api/tarjetas',      verifyToken, tarjetaRoutes);
+app.use('/api/reclamos',      verifyToken, reclamoRoutes);
 
 app.use((req, res) => res.status(404).json({ success: false, data: null, message: 'Ruta no encontrada' }));
 app.use(errorHandler);

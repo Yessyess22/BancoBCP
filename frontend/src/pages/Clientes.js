@@ -124,23 +124,53 @@ export default function ClientesPage() {
             <div className="form-grid">
               <div className="form-group">
                 <label>DNI *</label>
-                <input value={form.dni} onChange={e => setForm({ ...form, dni: e.target.value })} required disabled={!!editTarget} />
+                <input 
+                  type="text"
+                  pattern="[0-9]{7,20}" 
+                  inputMode="numeric"
+                  title="DNI debe contener solo entre 7 y 20 números"
+                  value={form.dni} 
+                  onChange={e => setForm({ ...form, dni: e.target.value.replace(/\D/g, '') })} 
+                  required 
+                  disabled={!!editTarget} 
+                />
               </div>
               <div className="form-group">
                 <label>Nombres *</label>
-                <input value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} required />
+                <input 
+                  type="text"
+                  pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
+                  title="Solo se permiten letras y espacios"
+                  value={form.nombre} 
+                  onChange={e => setForm({ ...form, nombre: e.target.value })} 
+                  required 
+                />
               </div>
               <div className="form-group">
                 <label>Apellidos *</label>
-                <input value={form.apellido} onChange={e => setForm({ ...form, apellido: e.target.value })} required />
+                <input 
+                  type="text"
+                  pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
+                  title="Solo se permiten letras y espacios"
+                  value={form.apellido} 
+                  onChange={e => setForm({ ...form, apellido: e.target.value })} 
+                  required 
+                />
               </div>
               <div className="form-group">
                 <label>Email</label>
-                <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+                <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="ejemplo@bcp.com.bo" />
               </div>
               <div className="form-group">
                 <label>Teléfono</label>
-                <input value={form.telefono} onChange={e => setForm({ ...form, telefono: e.target.value })} />
+                <input 
+                  type="text"
+                  pattern="[0-9]{8,15}"
+                  inputMode="numeric"
+                  title="Teléfono debe tener entre 8 y 15 dígitos numéricos"
+                  value={form.telefono} 
+                  onChange={e => setForm({ ...form, telefono: e.target.value.replace(/\D/g, '') })} 
+                />
               </div>
               <div className="form-group">
                 <label>Ubicación / Región</label>

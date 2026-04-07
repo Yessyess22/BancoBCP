@@ -50,7 +50,7 @@ export default function ReportesPage() {
       const doc = new jsPDF();
 
       // ── Header
-      doc.setFillColor(29, 181, 132);
+      doc.setFillColor(0, 123, 255);
       doc.rect(0, 0, 210, 30, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(18);
@@ -66,9 +66,9 @@ export default function ReportesPage() {
       doc.text('Indicadores Clave', 14, 40);
       doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
       doc.text(`Total Clientes: ${stats?.total_clientes || 0}`, 14, 48);
-      doc.text(`Saldo Total: S/. ${parseFloat(stats?.saldo_total || 0).toFixed(2)}`, 80, 48);
+      doc.text(`Saldo Total: Bs. ${parseFloat(stats?.saldo_total || 0).toFixed(2)}`, 80, 48);
       doc.text(`Créditos Aprobados: ${stats?.creditos_activos || 0}`, 14, 55);
-      doc.text(`Cartera Créditos: S/. ${parseFloat(stats?.cartera_creditos || 0).toFixed(2)}`, 80, 55);
+      doc.text(`Cartera Créditos: Bs. ${parseFloat(stats?.cartera_creditos || 0).toFixed(2)}`, 80, 55);
 
       // ── Cuentas
       doc.setFontSize(12); doc.setFont('helvetica', 'bold');
@@ -80,13 +80,13 @@ export default function ReportesPage() {
           c.numero_cuenta,
           `${c.nombre} ${c.apellido}`,
           c.tipo?.toUpperCase(),
-          `S/. ${parseFloat(c.saldo).toFixed(2)}`,
+          `Bs. ${parseFloat(c.saldo).toFixed(2)}`,
           c.moneda,
           c.activa ? 'ACTIVA' : 'SUSPENDIDA',
         ]),
-        headStyles: { fillColor: [29, 181, 132], fontSize: 9 },
+        headStyles: { fillColor: [0, 123, 255], fontSize: 9 },
         bodyStyles: { fontSize: 9 },
-        alternateRowStyles: { fillColor: [245, 250, 248] },
+        alternateRowStyles: { fillColor: [245, 250, 255] },
       });
 
       // ── Transacciones
@@ -101,7 +101,7 @@ export default function ReportesPage() {
           t.tipo?.toUpperCase(),
           t.origen || 'Efectivo',
           t.destino || 'Efectivo',
-          `S/. ${parseFloat(t.monto).toFixed(2)}`,
+          `Bs. ${parseFloat(t.monto).toFixed(2)}`,
           new Date(t.created_at).toLocaleDateString('es-PE'),
         ]),
         headStyles: { fillColor: [74, 144, 217], fontSize: 9 },
@@ -111,7 +111,7 @@ export default function ReportesPage() {
 
       // ── Creditos (nueva página)
       doc.addPage();
-      doc.setFillColor(29, 181, 132);
+      doc.setFillColor(0, 123, 255);
       doc.rect(0, 0, 210, 14, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(11);
@@ -125,8 +125,8 @@ export default function ReportesPage() {
         body: creditos.map(c => [
           `${c.nombre} ${c.apellido}`,
           c.dni || '—',
-          `S/. ${parseFloat(c.monto_solicitado).toFixed(2)}`,
-          c.monto_aprobado ? `S/. ${parseFloat(c.monto_aprobado).toFixed(2)}` : '—',
+          `Bs. ${parseFloat(c.monto_solicitado).toFixed(2)}`,
+          c.monto_aprobado ? `Bs. ${parseFloat(c.monto_aprobado).toFixed(2)}` : '—',
           `${c.plazo_meses} meses`,
           `${(parseFloat(c.tasa_interes) * 100).toFixed(1)}%`,
           c.estado?.toUpperCase(),
@@ -194,14 +194,14 @@ export default function ReportesPage() {
 
       <div className="stats-row" style={{ marginBottom: 24 }}>
         <div className="stat-card">
-          <div className="stat-icon-wrap stat-icon-green">👥</div>
+          <div className="stat-icon-wrap stat-icon-primary">👥</div>
           <div><div className="stat-num">{stats?.total_clientes || 0}</div><div className="stat-label">Total Clientes</div></div>
         </div>
         <div className="stat-card">
           <div className="stat-icon-wrap stat-icon-blue">💰</div>
           <div>
             <div className="stat-num" style={{ fontSize: 16 }}>
-              S/. {parseFloat(stats?.saldo_total || 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+              Bs. {parseFloat(stats?.saldo_total || 0).toLocaleString('es-BO', { minimumFractionDigits: 2 })}
             </div>
             <div className="stat-label">Saldos en Custodia</div>
           </div>
@@ -210,13 +210,13 @@ export default function ReportesPage() {
           <div className="stat-icon-wrap stat-icon-yellow">📈</div>
           <div>
             <div className="stat-num" style={{ fontSize: 16 }}>
-              S/. {parseFloat(stats?.cartera_creditos || 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+              Bs. {parseFloat(stats?.cartera_creditos || 0).toLocaleString('es-BO', { minimumFractionDigits: 2 })}
             </div>
             <div className="stat-label">Cartera Créditos</div>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon-wrap stat-icon-green">✅</div>
+          <div className="stat-icon-wrap stat-icon-primary">✅</div>
           <div><div className="stat-num">{stats?.creditos_activos || 0}</div><div className="stat-label">Créditos Aprobados</div></div>
         </div>
       </div>
@@ -245,7 +245,7 @@ export default function ReportesPage() {
                       <td><span className={`badge badge-${t.tipo === 'deposito' ? 'green' : t.tipo === 'retiro' ? 'red' : 'blue'}`}>{t.tipo?.toUpperCase()}</span></td>
                       <td>{t.origen || <em style={{ color: 'var(--text-muted)' }}>Efectivo</em>}</td>
                       <td>{t.destino || <em style={{ color: 'var(--text-muted)' }}>Efectivo</em>}</td>
-                      <td><strong>S/. {parseFloat(t.monto).toFixed(2)}</strong></td>
+                      <td><strong>Bs. {parseFloat(t.monto).toFixed(2)}</strong></td>
                       <td>{new Date(t.created_at).toLocaleString('es-PE')}</td>
                     </tr>
                   ))}
@@ -273,7 +273,7 @@ export default function ReportesPage() {
                       <td><code>{c.numero_cuenta}</code></td>
                       <td>{c.nombre} {c.apellido}</td>
                       <td><span className={`badge badge-${c.tipo === 'ahorros' ? 'green' : c.tipo === 'corriente' ? 'blue' : 'yellow'}`}>{c.tipo?.toUpperCase()}</span></td>
-                      <td><strong>S/. {parseFloat(c.saldo).toFixed(2)}</strong></td>
+                      <td><strong>Bs. {parseFloat(c.saldo).toFixed(2)}</strong></td>
                       <td>{c.moneda}</td>
                       <td><span className={`badge badge-${c.activa ? 'green' : 'red'}`}>{c.activa ? 'ACTIVA' : 'SUSPENDIDA'}</span></td>
                     </tr>
@@ -303,7 +303,7 @@ export default function ReportesPage() {
                       <td><span className={`badge badge-${t.tipo === 'deposito' ? 'green' : t.tipo === 'retiro' ? 'red' : 'blue'}`}>{t.tipo?.toUpperCase()}</span></td>
                       <td>{t.origen || <em style={{ color: 'var(--text-muted)' }}>Efectivo</em>}</td>
                       <td>{t.destino || <em style={{ color: 'var(--text-muted)' }}>Efectivo</em>}</td>
-                      <td><strong>S/. {parseFloat(t.monto).toFixed(2)}</strong></td>
+                      <td><strong>Bs. {parseFloat(t.monto).toFixed(2)}</strong></td>
                       <td>{new Date(t.created_at).toLocaleString('es-PE')}</td>
                     </tr>
                   ))}
@@ -330,8 +330,8 @@ export default function ReportesPage() {
                     <tr key={c.id}>
                       <td><span className="badge badge-gray">#{c.id}</span></td>
                       <td>{c.nombre} {c.apellido}</td>
-                      <td>S/. {parseFloat(c.monto_solicitado).toFixed(2)}</td>
-                      <td>{c.monto_aprobado ? <strong style={{ color: 'var(--primary)' }}>S/. {parseFloat(c.monto_aprobado).toFixed(2)}</strong> : <em style={{ color: 'var(--text-muted)' }}>—</em>}</td>
+                      <td>Bs. {parseFloat(c.monto_solicitado).toFixed(2)}</td>
+                      <td>{c.monto_aprobado ? <strong style={{ color: 'var(--primary)' }}>Bs. {parseFloat(c.monto_aprobado).toFixed(2)}</strong> : <em style={{ color: 'var(--text-muted)' }}>—</em>}</td>
                       <td>{c.plazo_meses} meses</td>
                       <td>{(parseFloat(c.tasa_interes) * 100).toFixed(1)}%</td>
                       <td><span className={`badge badge-${estadoBadge(c.estado)}`}>{c.estado?.toUpperCase()}</span></td>

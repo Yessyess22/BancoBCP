@@ -21,7 +21,6 @@ export default function BeneficiariosPage() {
   useEffect(() => {
     cargarEntidades();
     cargarBeneficiarios(clienteId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const cargarEntidades = async () => {
@@ -115,6 +114,8 @@ export default function BeneficiariosPage() {
                     <input 
                        type="text" 
                        name="alias" 
+                       pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
+                       title="Solo se permiten letras y espacios"
                        value={formData.alias} 
                        onChange={handleChange}
                        placeholder="Nombre corto de referencia"
@@ -128,15 +129,20 @@ export default function BeneficiariosPage() {
                     <input 
                        type="text" 
                        name="cuenta" 
+                       pattern="[0-9]+"
+                       title="Solo se permiten números"
+                       inputMode="numeric"
                        value={formData.cuenta} 
-                       onChange={handleChange}
+                       onChange={e => setFormData({ ...formData, cuenta: e.target.value.replace(/\D/g, '') })}
                        placeholder="Ej. 4500123984"
                        style={{ width: '100%', padding: '12px', borderRadius: '6px', border: '1px solid #cbd5e0', boxSizing: 'border-box', fontSize: '1.05em' }}
                        required
                        maxLength={20}
                     />
                 </div>
-                <button type="submit" style={{ width: '100%', padding: '14px', backgroundColor: '#38a169', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.15em' }}>
+                <button type="submit" style={{ width: '100%', padding: '14px', backgroundColor: 'var(--primary)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.15em', transition: 'background 0.2s' }} 
+                  onMouseOver={(e) => e.target.style.backgroundColor = 'var(--primary-dark)'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = 'var(--primary)'}>
                     Guardar Contacto
                 </button>
             </form>

@@ -15,7 +15,7 @@ const agregarBeneficiario = async (req, res) => {
     res.status(201).json({ success: true, message: 'Beneficiario guardado', data: result.rows[0] });
   } catch (error) {
     if (error.code === '23505') {
-      return res.status(409).json({ success: false, message: 'La cuenta ya existe para este cliente' });
+       return res.status(409).json({ success: false, message: 'Conflict: Esta cuenta ya se encuentra registrada en tu agenda' });
     }
     res.status(500).json({ success: false, message: 'Error interno del servidor', error: error.message });
   }

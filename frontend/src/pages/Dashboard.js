@@ -50,15 +50,15 @@ export default function Dashboard() {
       {
         label: 'Depósitos',
         data: [1200, 1900, 1500, 2100, 1800, 2400, 2123],
-        borderColor: '#1DB584',
-        backgroundColor: 'rgba(29,181,132,0.1)',
+        borderColor: '#1A237E',
+        backgroundColor: 'rgba(26, 35, 126, 0.1)',
         fill: true, tension: 0.4, pointRadius: 4,
-        pointBackgroundColor: '#fff', pointBorderColor: '#1DB584', pointBorderWidth: 2,
+        pointBackgroundColor: '#fff', pointBorderColor: '#1A237E', pointBorderWidth: 2,
       },
       {
         label: 'Retiros',
         data: [800, 1100, 950, 1400, 1200, 1600, 1500],
-        borderColor: '#F5A623',
+        borderColor: '#F57C00',
         backgroundColor: 'transparent',
         fill: false, tension: 0.4, pointRadius: 0,
       }
@@ -92,7 +92,7 @@ export default function Dashboard() {
       {/* KPI Stats */}
       <div className="stats-row">
         <div className="stat-card">
-          <div className="stat-icon-wrap stat-icon-green">👥</div>
+          <div className="stat-icon-wrap stat-icon-primary">👥</div>
           <div><div className="stat-num">{stats.clientes}</div><div className="stat-label">Clientes Activos</div></div>
         </div>
         <div className="stat-card">
@@ -104,10 +104,10 @@ export default function Dashboard() {
           <div><div className="stat-num">{stats.transacciones}</div><div className="stat-label">Operaciones</div></div>
         </div>
         <div className="stat-card glass">
-          <div className="stat-icon-wrap stat-icon-green">💰</div>
+          <div className="stat-icon-wrap stat-icon-primary">💰</div>
           <div>
             <div className="stat-num" style={{ fontSize: 24, letterSpacing: -1 }}>
-              S/. {parseFloat(stats?.totalSaldo || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              Bs. {parseFloat(stats?.totalSaldo || 0).toLocaleString('es-BO', { minimumFractionDigits: 2 })}
             </div>
             <div className="stat-label">Saldo Total en Custodia</div>
           </div>
@@ -119,16 +119,25 @@ export default function Dashboard() {
           {/* Virtual Card */}
           <div className="card">
             <div className="card-title">Cuenta Virtual BCP</div>
-            <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-              <div className="bank-card" style={{ flexShrink: 0 }}>
-                <div className="bank-card-date">{new Date().toLocaleDateString('es-PE', { month: '2-digit', year: '2-digit' })}</div>
-                <div className="bank-card-number">**** **** **** 2431</div>
-                <div className="bank-card-holder">BancoBCP Sistema MIS</div>
-                <div className="bank-card-balance-label">Saldo Total en Custodia</div>
-                <div className="bank-card-balance">S/. {stats.totalSaldo.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                <div className="visa-logo">VISA</div>
+            <div className="bank-card-wrap">
+              <div className="bank-card">
+                <div className="bank-card-top">
+                  <div></div>
+                  <div className="bank-card-date">{new Date().toLocaleDateString('es-PE', { month: '2-digit', year: '2-digit' })}</div>
+                </div>
+                <div className="bank-card-middle">
+                   <div className="bank-card-number">**** **** **** 2431</div>
+                </div>
+                <div className="bank-card-bottom">
+                   <div className="bank-card-info">
+                     <div className="bank-card-holder">BancoBCP Sistema MIS</div>
+                     <div className="bank-card-balance-label">Saldo Total en Custodia</div>
+                     <div className="bank-card-balance">Bs. {stats.totalSaldo.toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                   </div>
+                   <div className="visa-logo">VISA</div>
+                </div>
               </div>
-              <div className="card-quick-actions" style={{ flex: 1, minWidth: 120 }}>
+              <div className="card-quick-actions">
                 <Link to="/transacciones" className="quick-action-btn"><span className="quick-action-icon">💸</span>Transacciones</Link>
                 <Link to="/cuentas"       className="quick-action-btn"><span className="quick-action-icon">💳</span>Abrir Cuenta</Link>
                 <Link to="/creditos"      className="quick-action-btn"><span className="quick-action-icon">🏦</span>Solicitar Crédito</Link>
@@ -155,7 +164,7 @@ export default function Dashboard() {
                     <div className="tx-desc">{new Date(tx.created_at).toLocaleString('es-PE')}</div>
                   </div>
                   <div className={`tx-amount ${tx.tipo === 'deposito' ? 'income' : 'expense'}`}>
-                    {tx.tipo === 'deposito' ? '+' : '-'}S/. {parseFloat(tx.monto).toFixed(2)}
+                    {tx.tipo === 'deposito' ? '+' : '-'}Bs. {parseFloat(tx.monto).toFixed(2)}
                   </div>
                 </div>
               ))}
@@ -190,7 +199,7 @@ export default function Dashboard() {
                     </span>
                   </div>
                 </div>
-                <div className="account-mini-balance">S/. {parseFloat(c.saldo).toFixed(2)}</div>
+                <div className="account-mini-balance">Bs. {parseFloat(c.saldo).toFixed(2)}</div>
               </div>
             ))}
           </div>

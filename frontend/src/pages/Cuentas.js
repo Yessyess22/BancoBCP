@@ -154,8 +154,16 @@ export default function CuentasPage() {
                 </select>
               </div>
               <div className="form-group">
-                <label>Saldo Inicial (S/.)</label>
-                <input type="number" step="0.01" min="0" value={form.saldo_inicial} onChange={e => setForm({ ...form, saldo_inicial: e.target.value })} placeholder="0.00" />
+                <label>Saldo Inicial (Bs.)</label>
+                <input 
+                  type="number" 
+                  step="0.01" 
+                  min="0" 
+                  title="Saldo inicial no puede ser negativo"
+                  value={form.saldo_inicial} 
+                  onChange={e => setForm({ ...form, saldo_inicial: e.target.value })} 
+                  placeholder="0.00" 
+                />
               </div>
               <div className="form-group">
                 <label>Moneda *</label>
@@ -201,7 +209,7 @@ export default function CuentasPage() {
                       <td><code>{c.numero_cuenta}</code></td>
                       <td><strong>{c.nombre} {c.apellido}</strong><div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{c.dni}</div></td>
                       <td><span className="badge badge-blue">{c.tipo_descripcion || c.tipo}</span></td>
-                      <td><strong>S/. {parseFloat(c.saldo).toFixed(2)}</strong></td>
+                      <td><strong>Bs. {parseFloat(c.saldo).toFixed(2)}</strong></td>
                       <td>{c.moneda_codigo || c.moneda}</td>
                       <td><span className={`badge badge-${c.activa ? 'green' : 'red'}`}>{c.activa ? 'ACTIVA' : 'SUSPENDIDA'}</span></td>
                       <td style={{ textAlign: 'center' }}>

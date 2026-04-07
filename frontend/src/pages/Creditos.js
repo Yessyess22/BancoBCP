@@ -195,9 +195,16 @@ export default function CreditosPage() {
                 </div>
               </div>
               <div className="form-group">
-                <label>Monto Solicitado (S/.)*</label>
-                <input type="number" step="0.01" min="100" value={form.monto_solicitado}
-                  onChange={e => setForm({ ...form, monto_solicitado: e.target.value })} required />
+                <label>Monto Solicitado (Bs.)*</label>
+                <input 
+                  type="number" 
+                  step="0.01" 
+                  min="100" 
+                  title="Monto mínimo 100 Bs."
+                  value={form.monto_solicitado}
+                  onChange={e => setForm({ ...form, monto_solicitado: e.target.value })} 
+                  required 
+                />
               </div>
               <div className="form-group">
                 <label>Tasa de Interés Anual (ej: 0.15 = 15%)</label>
@@ -251,8 +258,8 @@ export default function CreditosPage() {
                     <tr key={c.id}>
                       <td><span className="badge badge-gray">#{c.id}</span></td>
                       <td><strong>{c.nombre} {c.apellido}</strong><br /><span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{c.dni}</span></td>
-                      <td><strong>S/. {parseFloat(c.monto_solicitado).toFixed(2)}</strong>
-                        {c.monto_aprobado && <div style={{ fontSize: 11, color: 'var(--primary)' }}>Aprobado: S/. {parseFloat(c.monto_aprobado).toFixed(2)}</div>}
+                      <td><strong>Bs. {parseFloat(c.monto_solicitado).toFixed(2)}</strong>
+                        {c.monto_aprobado && <div style={{ fontSize: 11, color: 'var(--primary)' }}>Aprobado: Bs. {parseFloat(c.monto_aprobado).toFixed(2)}</div>}
                       </td>
                       <td>{(parseFloat(c.tasa_interes) * 100).toFixed(1)}%</td>
                       <td>{c.plazo_meses} meses</td>
@@ -312,12 +319,19 @@ export default function CreditosPage() {
             <div style={{ padding: '0 24px 24px' }}>
               <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 16 }}>
                 Cliente: <strong>{approvalModal.nombre} {approvalModal.apellido}</strong><br />
-                Monto solicitado: <strong>S/. {parseFloat(approvalModal.monto_solicitado).toFixed(2)}</strong>
+                Monto solicitado: <strong>Bs. {parseFloat(approvalModal.monto_solicitado).toFixed(2)}</strong>
               </p>
               <div className="form-group">
-                <label>Monto a Aprobar (S/.) *</label>
-                <input type="number" step="0.01" value={montoAprobado}
-                  onChange={e => setMontoAprobado(e.target.value)} autoFocus />
+                <label>Monto a Aprobar (Bs.) *</label>
+                <input 
+                  type="number" 
+                  step="0.01" 
+                  min="0.01"
+                  title="Monto aprobado debe ser mayor a 0"
+                  value={montoAprobado}
+                  onChange={e => setMontoAprobado(e.target.value)} 
+                  autoFocus 
+                />
               </div>
               <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
                 <button className="btn btn-primary" onClick={handleApprove}>Confirmar Aprobación</button>
@@ -348,9 +362,9 @@ export default function CreditosPage() {
                     {cuotasModal.map(q => (
                       <tr key={q.numero_cuota}>
                         <td>{q.numero_cuota}</td>
-                        <td>S/. {parseFloat(q.monto_cuota).toFixed(2)}</td>
-                        <td>S/. {parseFloat(q.monto_capital).toFixed(2)}</td>
-                        <td>S/. {parseFloat(q.monto_interes).toFixed(2)}</td>
+                        <td>Bs. {parseFloat(q.monto_cuota).toFixed(2)}</td>
+                        <td>Bs. {parseFloat(q.monto_capital).toFixed(2)}</td>
+                        <td>Bs. {parseFloat(q.monto_interes).toFixed(2)}</td>
                         <td>{new Date(q.fecha_vencimiento).toLocaleDateString('es-PE')}</td>
                         <td><span className={`badge badge-${q.estado === 'pagado' ? 'green' : q.estado === 'vencido' ? 'red' : 'blue'}`}>{q.estado?.toUpperCase()}</span></td>
                       </tr>

@@ -127,10 +127,10 @@ export default function TransaccionesPage() {
 
       <div className="stats-row" style={{ gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 20 }}>
         <div className="stat-card">
-          <div className="stat-icon-wrap stat-icon-green">⬆️</div>
+          <div className="stat-icon-wrap stat-icon-primary">⬆️</div>
           <div>
             <div className="stat-num" style={{ fontSize: 16, color: 'var(--primary)' }}>
-              S/. {totalDepositos.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+              Bs. {totalDepositos.toLocaleString('es-BO', { minimumFractionDigits: 2 })}
             </div>
             <div className="stat-label">Total Depósitos</div>
           </div>
@@ -139,7 +139,7 @@ export default function TransaccionesPage() {
           <div className="stat-icon-wrap stat-icon-red">⬇️</div>
           <div>
             <div className="stat-num" style={{ fontSize: 16, color: 'var(--danger)' }}>
-              S/. {totalRetiros.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+              Bs. {totalRetiros.toLocaleString('es-BO', { minimumFractionDigits: 2 })}
             </div>
             <div className="stat-label">Total Retiros</div>
           </div>
@@ -199,7 +199,7 @@ export default function TransaccionesPage() {
                           filterAccounts(originSearch).map(c => (
                             <li key={c.id} className="search-select-item" onClick={() => selectOrigin(c)}>
                               <strong>{c.numero_cuenta} — {c.nombre} {c.apellido}</strong>
-                              <span>Saldo: S/. {parseFloat(c.saldo).toFixed(2)} | DNI: {c.dni}</span>
+                              <span>Saldo: Bs. {parseFloat(c.saldo).toFixed(2)} | DNI: {c.dni}</span>
                             </li>
                           ))
                         )}
@@ -242,10 +242,17 @@ export default function TransaccionesPage() {
                 </div>
               )}
               <div className="form-group">
-                <label>Monto de la Operación (S/.) *</label>
-                <input type="number" step="0.01" min="0.01" value={form.monto}
-                  onChange={e => setForm({ ...form, monto: e.target.value })} required
-                  placeholder="0.00" />
+                <label>Monto de la Operación (Bs.) *</label>
+                <input 
+                  type="number" 
+                  step="0.01" 
+                  min="0.01" 
+                  title="Monto debe ser mayor a 0"
+                  value={form.monto}
+                  onChange={e => setForm({ ...form, monto: e.target.value })} 
+                  required
+                  placeholder="0.00" 
+                />
               </div>
               <div className="form-group">
                 <label>Concepto / Glosa</label>
@@ -313,7 +320,7 @@ export default function TransaccionesPage() {
                       <td>{t.cuenta_destino ? <code style={{ fontSize: 11 }}>{t.cuenta_destino}</code> : <em style={{ color: 'var(--text-muted)', fontSize: 12 }}>Efectivo</em>}</td>
                       <td>
                         <strong style={{ color: t.tipo === 'deposito' ? 'var(--primary-dark)' : t.tipo === 'retiro' ? 'var(--danger)' : 'var(--info)' }}>
-                          S/. {parseFloat(t.monto).toFixed(2)}
+                          Bs. {parseFloat(t.monto).toFixed(2)}
                         </strong>
                       </td>
                       <td style={{ color: 'var(--text-secondary)', fontSize: 12 }}>{t.descripcion || <em>—</em>}</td>

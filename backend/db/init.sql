@@ -42,6 +42,16 @@ CREATE TABLE IF NOT EXISTS monedas (
   activo   BOOLEAN DEFAULT TRUE
 );
 
+-- 3.5 tipos_cambio
+CREATE TABLE IF NOT EXISTS tipos_cambio (
+  id SERIAL PRIMARY KEY,
+  moneda_origen_id INTEGER REFERENCES monedas(id),
+  moneda_destino_id INTEGER REFERENCES monedas(id),
+  tasa_conversion DECIMAL(15,6) NOT NULL,
+  fecha_vigencia TIMESTAMP DEFAULT NOW(),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
 -- 4. roles
 CREATE TABLE IF NOT EXISTS roles (
   id          SERIAL PRIMARY KEY,
@@ -265,7 +275,8 @@ ON CONFLICT (codigo_sie) DO NOTHING;
 INSERT INTO monedas (codigo, nombre, simbolo) VALUES
   ('PEN', 'Sol Peruano', 'S/'),
   ('USD', 'Dólar Americano', '$'),
-  ('EUR', 'Euro', '€')
+  ('EUR', 'Euro', '€'),
+  ('BOB', 'Boliviano', 'Bs.')
 ON CONFLICT (codigo) DO NOTHING;
 
 INSERT INTO tipos_cuenta (codigo, descripcion) VALUES
@@ -280,8 +291,20 @@ INSERT INTO roles (nombre, descripcion) VALUES
   ('gerente',  'Gerente de sucursal')
 ON CONFLICT (nombre) DO NOTHING;
 
+INSERT INTO ubicacion (id, nombre, nivel, padre_id, codigo) VALUES
+  (1, 'Bolivia', 'pais', NULL, 'BO')
+ON CONFLICT (id) DO NOTHING;
+
 INSERT INTO ubicacion (nombre, nivel, padre_id, codigo) VALUES
-  ('Bolivia', 'pais', NULL, 'BO')
+  ('Chuquisaca', 'departamento', 1, 'CH'),
+  ('La Paz', 'departamento', 1, 'LP'),
+  ('Cochabamba', 'departamento', 1, 'CB'),
+  ('Oruro', 'departamento', 1, 'OR'),
+  ('Potosí', 'departamento', 1, 'PT'),
+  ('Tarija', 'departamento', 1, 'TJ'),
+  ('Santa Cruz', 'departamento', 1, 'SC'),
+  ('Beni', 'departamento', 1, 'BN'),
+  ('Pando', 'departamento', 1, 'PN')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO usuarios (username, nombre, email, password, rol)

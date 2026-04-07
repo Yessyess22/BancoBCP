@@ -228,7 +228,40 @@ CREATE TABLE IF NOT EXISTS integracion_log (
   created_at     TIMESTAMP DEFAULT NOW()
 );
 
+-- 19. entidades_financieras
+CREATE TABLE IF NOT EXISTS entidades_financieras (
+  id SERIAL PRIMARY KEY,
+  codigo_sie VARCHAR(10) UNIQUE NOT NULL,
+  nombre VARCHAR(100) NOT NULL,
+  activa BOOLEAN DEFAULT TRUE
+);
+
+-- 20. agenda_beneficiarios
+CREATE TABLE IF NOT EXISTS agenda_beneficiarios (
+  id SERIAL PRIMARY KEY,
+  cliente_id INTEGER NOT NULL REFERENCES clientes(id) ON DELETE CASCADE,
+  entidad_id INTEGER NOT NULL REFERENCES entidades_financieras(id),
+  alias_contacto VARCHAR(50) NOT NULL,
+  numero_cuenta VARCHAR(20) NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE (cliente_id, numero_cuenta)
+);
+
 -- Datos semilla
+INSERT INTO clientes (id, dni, nombre, apellido, email) VALUES 
+  (1, '1234567', 'Juan', 'Perez', 'juan@test.com')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO entidades_financieras (codigo_sie, nombre) VALUES 
+  ('101', 'Banco de Crédito de Bolivia - BCP'),
+  ('102', 'Banco Nacional de Bolivia - BNB'),
+  ('103', 'Banco Mercantil Santa Cruz'),
+  ('104', 'Banco Fie'),
+  ('105', 'Banco Sol'),
+  ('106', 'Banco Unión'),
+  ('107', 'Banco Económico')
+ON CONFLICT (codigo_sie) DO NOTHING;
+
 INSERT INTO monedas (codigo, nombre, simbolo) VALUES
   ('PEN', 'Sol Peruano', 'S/'),
   ('USD', 'Dólar Americano', '$'),

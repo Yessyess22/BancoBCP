@@ -9,6 +9,7 @@ export default function Sidebar({ user, onLogout }) {
     { to: '/clientes', label: 'Clientes', icon: '👥', group: 'GESTIÓN' },
     { to: '/cuentas', label: 'Cuentas', icon: '💳', group: 'GESTIÓN' },
     { to: '/transacciones', label: 'Transacciones', icon: '💸', group: 'GESTIÓN' },
+    { to: '/beneficiarios', label: 'Beneficiarios', icon: '📒', group: 'GESTIÓN' },
     { to: '/creditos', label: 'Créditos', icon: '🏦', group: 'MÓDULOS' },
     { to: '/reportes', label: 'Reportes', icon: '📈', group: 'SISTEMA' },
   ];

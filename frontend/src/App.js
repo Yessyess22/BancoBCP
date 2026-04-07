@@ -12,6 +12,7 @@ import CuentasPage from './pages/Cuentas';
 import TransaccionesPage from './pages/Transacciones';
 import CreditosPage from './pages/Creditos';
 import ReportesPage from './pages/Reportes';
+import BeneficiariosPage from './pages/Beneficiarios';
 
 const API = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
@@ -125,6 +126,7 @@ function AppContent() {
                 <Route path="/cuentas" element={<CuentasPage />} />
                 <Route path="/transacciones" element={<TransaccionesPage />} />
                 <Route path="/creditos" element={<CreditosPage />} />
+                <Route path="/beneficiarios" element={<BeneficiariosPage />} />
                 <Route path="/reportes" element={<ReportesPage />} />
                 <Route path="*" element={<Navigate to="/" />} />
               </Routes>

@@ -21,13 +21,19 @@ const getById = async (req, res, next) => {
 
 const create = async (req, res, next) => {
   try {
-    const data = await service.create(req.body);
-    res.status(201).json({ success: true, data, message: 'Cliente registrado' });
+    const { cliente, usuarioGenerado } = await service.create(req.body);
+    res.status(201).json({
+      success: true,
+      data: cliente,
+      usuarioGenerado,
+      message: 'Cliente registrado exitosamente',
+    });
   } catch (err) {
     if (err.code === '23505') {
        let msg = 'El cliente ya existe (DNI o email duplicado)';
        if (err.detail && err.detail.includes('dni')) msg = 'Error: Este número de DNI ya se encuentra registrado';
        if (err.detail && err.detail.includes('email')) msg = 'Error: Este correo electrónico ya está en uso';
+       if (err.detail && err.detail.includes('username')) msg = 'Error: Ya existe un usuario con ese DNI';
        return res.status(409).json({ success: false, message: msg });
     }
     next(err);

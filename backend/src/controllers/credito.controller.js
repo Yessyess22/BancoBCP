@@ -21,7 +21,7 @@ const getById = async (req, res, next) => {
 
 const solicitar = async (req, res, next) => {
   try {
-    const data = await service.solicitar(req.body);
+    const data = await service.solicitar({ ...req.body, usuario_registra: req.user.id });
     res.status(201).json({ success: true, data, message: 'Solicitud enviada' });
   } catch (err) {
     next(err);
@@ -32,7 +32,8 @@ const revisar = async (req, res, next) => {
   try {
     const data = await service.procesarRevision(req.params.id, {
       ...req.body,
-      usuario_aprueba: req.user.id
+      usuario_aprueba: req.user.id,
+      rol_aprueba: req.user.rol,
     });
     res.json({ success: true, data, message: `Estado actualizado a ${req.body.estado}` });
   } catch (err) {

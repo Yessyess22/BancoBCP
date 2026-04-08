@@ -4,7 +4,15 @@ import { Link, useLocation } from 'react-router-dom';
 export default function Sidebar({ user, onLogout }) {
   const location = useLocation();
 
-  const menuItems = [
+  const esCliente = user?.rol === 'cliente';
+
+  const menuItems = esCliente ? [
+    { to: '/',              label: 'Inicio',         icon: '🏠', group: 'MI BANCO' },
+    { to: '/cuentas',       label: 'Mis Cuentas',    icon: '💳', group: 'MI BANCO' },
+    { to: '/transacciones', label: 'Transferencias', icon: '💸', group: 'MI BANCO' },
+    { to: '/beneficiarios', label: 'Beneficiarios',  icon: '📒', group: 'MI BANCO' },
+    { to: '/creditos',      label: 'Mis Créditos',   icon: '🏦', group: 'MI BANCO' },
+  ] : [
     { to: '/', label: 'Resumen', icon: '📊', group: 'PRINCIPAL' },
     { to: '/clientes', label: 'Clientes', icon: '👥', group: 'GESTIÓN' },
     { to: '/cuentas', label: 'Cuentas', icon: '💳', group: 'GESTIÓN' },
@@ -12,6 +20,7 @@ export default function Sidebar({ user, onLogout }) {
     { to: '/beneficiarios', label: 'Beneficiarios', icon: '📒', group: 'GESTIÓN' },
     { to: '/creditos', label: 'Créditos', icon: '🏦', group: 'MÓDULOS' },
     { to: '/reportes', label: 'Reportes', icon: '📈', group: 'SISTEMA' },
+    ...(user?.rol === 'admin' ? [{ to: '/usuarios', label: 'Usuarios', icon: '🔑', group: 'SISTEMA' }] : []),
   ];
 
   const groupedMenu = menuItems.reduce((acc, item) => {
@@ -50,8 +59,9 @@ export default function Sidebar({ user, onLogout }) {
             <div className="user-name">{user?.nombre}</div>
             <div className="user-role">{
               user?.rol === 'admin' ? 'Administrador' :
+              user?.rol === 'empleado' ? 'Empleado' :
+              user?.rol === 'cliente' ? 'Cliente' :
               user?.rol === 'gerente' ? 'Gerente' :
-              user?.rol === 'cajero' ? 'Cajero' : 
               user?.rol || 'Usuario'
             }</div>
           </div>

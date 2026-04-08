@@ -9,11 +9,12 @@ const emptyForm = { dni: '', nombre: '', apellido: '', email: '', telefono: '', 
 export default function ClientesPage() {
   const { ubicaciones }             = useParamStore();
   const [clientes, setClientes]     = useState([]);
-  const [showForm, setShowForm]     = useState(false);
-  const [loading, setLoading]       = useState(true);
-  const [msg, setMsg]               = useState('');
-  const [editTarget, setEditTarget] = useState(null);
-  const [form, setForm]             = useState(emptyForm);
+  const [showForm, setShowForm]         = useState(false);
+  const [loading, setLoading]           = useState(true);
+  const [msg, setMsg]                   = useState('');
+  const [editTarget, setEditTarget]     = useState(null);
+  const [form, setForm]                 = useState(emptyForm);
+  const [credenciales, setCredenciales] = useState(null);
 
   // Estados para búsqueda y paginación
   const [searchTerm, setSearchTerm]   = useState('');
@@ -80,8 +81,9 @@ export default function ClientesPage() {
         await axios.put(`${API}/clientes/${editTarget.id}`, form);
         flash('✅ Cliente actualizado exitosamente');
       } else {
-        await axios.post(`${API}/clientes`, form);
-        flash('✅ Cliente registrado exitosamente');
+        const res = await axios.post(`${API}/clientes`, form);
+        setCredenciales(res.data.usuarioGenerado);
+        flash('✅ Cliente registrado. Se generó acceso al sistema.');
       }
       setShowForm(false);
       setForm(emptyForm);
@@ -274,6 +276,43 @@ export default function ClientesPage() {
           </>
         )}
       </div>
+
+      {/* Modal credenciales generadas */}
+      {credenciales && (
+        <div className="modal-overlay" onClick={() => setCredenciales(null)}>
+          <div className="modal-box" style={{ maxWidth: 420 }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-title">🔑 Acceso generado para el cliente</div>
+              <button className="modal-close" onClick={() => setCredenciales(null)}>✕</button>
+            </div>
+            <div style={{ padding: '0 24px 24px' }}>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
+                Se creó automáticamente un usuario de acceso al sistema. Entrega estas credenciales al cliente:
+              </p>
+              <div style={{ background: 'var(--info-light)', border: '1px solid rgba(74,144,217,0.3)', borderRadius: 10, padding: '16px 20px', marginBottom: 20 }}>
+                <div style={{ marginBottom: 10 }}>
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>Usuario</span>
+                  <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'monospace', color: 'var(--primary)', marginTop: 2 }}>
+                    {credenciales.username}
+                  </div>
+                </div>
+                <div>
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>Contraseña inicial</span>
+                  <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'monospace', color: 'var(--primary)', marginTop: 2 }}>
+                    {credenciales.password}
+                  </div>
+                </div>
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>
+                ⚠️ La contraseña inicial es el DNI del cliente. Se recomienda cambiarla en el primer ingreso.
+              </p>
+              <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setCredenciales(null)}>
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

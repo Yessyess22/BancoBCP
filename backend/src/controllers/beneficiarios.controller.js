@@ -49,4 +49,17 @@ const listarEntidades = async (req, res) => {
   }
 };
 
-module.exports = { agregarBeneficiario, listarBeneficiarios, listarEntidades };
+const eliminarBeneficiario = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('DELETE FROM agenda_beneficiarios WHERE id = $1 RETURNING id', [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Beneficiario no encontrado' });
+    }
+    res.json({ success: true, message: 'Beneficiario eliminado' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error al eliminar', error: error.message });
+  }
+};
+
+module.exports = { agregarBeneficiario, listarBeneficiarios, listarEntidades, eliminarBeneficiario };

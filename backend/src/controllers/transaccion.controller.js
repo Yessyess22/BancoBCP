@@ -2,7 +2,8 @@ const service = require('../services/transaccion.service');
 
 const getAll = async (req, res, next) => {
   try {
-    const data = await service.getAll();
+    const clienteId = req.user.rol === 'cliente' ? req.user.cliente_id : null;
+    const data = await service.getAll(clienteId);
     res.json({ success: true, data, message: 'OK' });
   } catch (err) {
     next(err);
@@ -20,7 +21,7 @@ const deposito = async (req, res, next) => {
 
 const retiro = async (req, res, next) => {
   try {
-    const data = await service.retirar(req.body);
+    const data = await service.retirar(req.body, req.user);
     res.status(201).json({ success: true, data, message: 'Retiro realizado' });
   } catch (err) {
     next(err);
@@ -29,7 +30,7 @@ const retiro = async (req, res, next) => {
 
 const transferencia = async (req, res, next) => {
   try {
-    const data = await service.transferir(req.body);
+    const data = await service.transferir(req.body, req.user);
     res.status(201).json({ success: true, data, message: 'Transferencia realizada' });
   } catch (err) {
     next(err);

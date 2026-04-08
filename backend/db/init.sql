@@ -82,7 +82,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
   nombre     VARCHAR(100) NOT NULL,
   email      CITEXT UNIQUE NOT NULL,
   password   VARCHAR(255) NOT NULL,
-  rol        VARCHAR(20) DEFAULT 'empleado' CHECK (rol IN ('admin', 'empleado')),
+  rol        VARCHAR(20) DEFAULT 'empleado' CHECK (rol IN ('admin', 'empleado', 'cliente')),
+  cliente_id INTEGER REFERENCES clientes(id),
   activo     BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
@@ -150,8 +151,9 @@ CREATE TABLE IF NOT EXISTS creditos (
   estado          estado_credito DEFAULT 'solicitado',
   fecha_solicitud DATE DEFAULT CURRENT_DATE,
   fecha_aprobacion DATE,
-  usuario_aprueba INTEGER REFERENCES usuarios(id),
-  created_at      TIMESTAMP DEFAULT NOW()
+  usuario_aprueba  INTEGER REFERENCES usuarios(id),
+  usuario_registra INTEGER REFERENCES usuarios(id),
+  created_at       TIMESTAMP DEFAULT NOW()
 );
 
 -- 13. cuotas_credito
@@ -273,7 +275,7 @@ INSERT INTO entidades_financieras (codigo_sie, nombre) VALUES
 ON CONFLICT (codigo_sie) DO NOTHING;
 
 INSERT INTO monedas (codigo, nombre, simbolo) VALUES
-  ('PEN', 'Sol Peruano', 'S/'),
+  ('BOB', 'Boliviano', 'Bs.'),
   ('USD', 'Dólar Americano', '$'),
   ('EUR', 'Euro', '€'),
   ('BOB', 'Boliviano', 'Bs.')
@@ -324,7 +326,7 @@ ON CONFLICT (codigo) DO NOTHING;
 INSERT INTO rol_permisos (rol_id, permiso_id)
 SELECT r.id, p.id 
 FROM roles r, permisos p 
-WHERE r.nombre = 'empleado' AND p.codigo IN ('OP_REGISTRAR_CLIENTE', 'OP_APERTURA_CUENTA', 'OP_OPERAR_TRANSACCION')
+WHERE r.nombre = 'empleado' AND p.codigo IN ('OP_REGISTRAR_CLIENTE', 'OP_APERTURA_CUENTA', 'OP_OPERAR_TRANSACCION', 'OP_REVISAR_CREDITO')
 ON CONFLICT DO NOTHING;
 
 -- Asignar permisos al rol admin (todos)

@@ -2,7 +2,8 @@ const service = require('../services/cuenta.service');
 
 const getAll = async (req, res, next) => {
   try {
-    const data = await service.getAll();
+    const clienteId = req.user.rol === 'cliente' ? req.user.cliente_id : null;
+    const data = await service.getAll(clienteId);
     res.json({ success: true, data, message: 'OK' });
   } catch (err) {
     next(err);

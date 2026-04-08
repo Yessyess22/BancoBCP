@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useAuth } from '../App';
 
-const API = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
 export default function CreditosPage() {
+  const { user } = useAuth();
   const [creditos, setCreditos]       = useState([]);
   const [clientes, setClientes]       = useState([]);
   const [showForm, setShowForm]       = useState(false);
@@ -248,13 +250,17 @@ export default function CreditosPage() {
                 <thead>
                   <tr>
                     <th>ID</th><th>Cliente</th><th>Monto Solicitado</th>
-                    <th>Tasa Anual</th><th>Plazo</th><th>Estado</th><th>Acciones</th>
+                    <th>Tasa Anual</th><th>Plazo</th><th>Registrado por</th><th>Estado</th><th>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedCreditos.length === 0
-                    ? <tr><td colSpan="7" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 32 }}>Sin solicitudes de crédito</td></tr>
-                    : paginatedCreditos.map(c => (
+                    ? <tr><td colSpan="8" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 32 }}>Sin solicitudes de crédito</td></tr>
+                    : paginatedCreditos.map(c => {
+                      const esMiSolicitud = user && c.usuario_registra && String(c.usuario_registra) === String(user.id);
+                      const esAdmin = user?.rol === 'admin';
+                      const puedeRevisar = !esMiSolicitud || esAdmin;
+                      return (
                     <tr key={c.id}>
                       <td><span className="badge badge-gray">#{c.id}</span></td>
                       <td><strong>{c.nombre} {c.apellido}</strong><br /><span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{c.dni}</span></td>
@@ -263,20 +269,35 @@ export default function CreditosPage() {
                       </td>
                       <td>{(parseFloat(c.tasa_interes) * 100).toFixed(1)}%</td>
                       <td>{c.plazo_meses} meses</td>
-                      <td><span className={`badge badge-${estadoBadge(c.estado)}`}>{c.estado.toUpperCase()}</span></td>
+                      <td style={{ fontSize: 12 }}>
+                        {c.registrado_por_nombre
+                          ? <span title={`ID usuario: ${c.usuario_registra}`}>{c.registrado_por_nombre}</span>
+                          : <em style={{ color: 'var(--text-muted)' }}>Sistema</em>}
+                      </td>
+                      <td>
+                        <span className={`badge badge-${estadoBadge(c.estado)}`}>{c.estado.toUpperCase()}</span>
+                        {c.estado === 'aprobado' && c.aprobado_por_nombre && (
+                          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>por {c.aprobado_por_nombre}</div>
+                        )}
+                      </td>
                       <td>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                          {c.estado === 'solicitado' && (<>
-                            <button onClick={() => openApproval(c)} className="btn btn-sm btn-success" title="Aprobar">✅ Aprobar</button>
-                            <button onClick={() => handleReject(c.id)} className="btn btn-sm btn-danger" title="Rechazar">❌</button>
-                          </>)}
+                          {c.estado === 'solicitado' && (
+                            puedeRevisar ? (<>
+                              <button onClick={() => openApproval(c)} className="btn btn-sm btn-success" title="Aprobar">✅ Aprobar</button>
+                              <button onClick={() => handleReject(c.id)} className="btn btn-sm btn-danger" title="Rechazar">❌</button>
+                            </>) : (
+                              <span style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}
+                                    title="Requiere supervisor">🔒 Requiere supervisor</span>
+                            )
+                          )}
                           {c.estado === 'aprobado' && (
                             <button onClick={() => viewCuotas(c.id)} className="btn btn-sm btn-secondary" title="Ver cuotas">📋 Cuotas</button>
                           )}
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             </div>

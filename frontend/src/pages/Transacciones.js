@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const API = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
 export default function TransaccionesPage() {
   const [transacciones, setTransacciones] = useState([]);
@@ -36,20 +36,28 @@ export default function TransaccionesPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [resTrans, resCuentas, resBen, resEnt] = await Promise.all([
+      const [resTrans, resCuentas, resEnt] = await Promise.all([
         axios.get(`${API}/transacciones`),
         axios.get(`${API}/cuentas`),
-        axios.get(`${API}/beneficiarios?cliente_id=1`), 
         axios.get(`${API}/beneficiarios/entidades`),
       ]);
       setTransacciones(Array.isArray(resTrans.data) ? resTrans.data : (resTrans.data?.data || []));
       setCuentas(Array.isArray(resCuentas.data) ? resCuentas.data : (resCuentas.data?.data || []));
-      setBeneficiarios(resBen.data?.data || []);
       setEntidades(resEnt.data?.data || []);
     } catch (err) {
       console.error(err);
     }
     setLoading(false);
+  };
+
+  const cargarBeneficiarios = async (clienteId) => {
+    if (!clienteId) { setBeneficiarios([]); return; }
+    try {
+      const res = await axios.get(`${API}/beneficiarios?cliente_id=${clienteId}`);
+      setBeneficiarios(res.data?.data || []);
+    } catch (err) {
+      setBeneficiarios([]);
+    }
   };
 
   useEffect(() => { fetchData(); }, []);
@@ -66,8 +74,14 @@ export default function TransaccionesPage() {
     if ((tipoOpe === 'retiro' || tipoOpe === 'transferencia') && !form.cuenta_origen_id) {
       flash('❌ Seleccione una cuenta de origen válida'); return;
     }
-    if ((tipoOpe === 'deposito' || tipoOpe === 'transferencia') && !form.cuenta_destino_id) {
+    if (tipoOpe === 'deposito' && !form.cuenta_destino_id) {
       flash('❌ Seleccione una cuenta de destino válida'); return;
+    }
+    if (tipoOpe === 'transferencia' && !isInterbank && !form.cuenta_destino_id) {
+      flash('❌ Seleccione una cuenta de destino válida'); return;
+    }
+    if (tipoOpe === 'transferencia' && isInterbank && (!form.cuenta_externa)) {
+      flash('❌ Ingrese el banco y número de cuenta destino'); return;
     }
 
     try {
@@ -133,33 +147,38 @@ export default function TransaccionesPage() {
   };
 
   const selectOrigin = (c) => {
-    setForm({ ...form, cuenta_origen_id: c.id });
+    setForm({ ...form, cuenta_origen_id: c.id, cuenta_destino_id: '', banco_nombre: '', cuenta_externa: '' });
     setOriginSearch(`${c.numero_cuenta} — ${c.nombre} ${c.apellido}`);
     setShowOriginDrop(false);
+    setDestSearch('');
+    cargarBeneficiarios(c.cliente_id);
   };
 
   const selectDest = (item) => {
     let finalId = item.id;
-    
-    // Si es un beneficiario, buscar si el número de cuenta corresponde a una cuenta interna
+    let interbank = isInterbank;
+
     if (item.isBeneficiary) {
       const match = cuentas.find(c => c.numero_cuenta === item.numero_cuenta);
       if (match) {
         finalId = match.id;
-        setIsInterbank(false);
+        interbank = false;
       } else {
         finalId = null;
-        setIsInterbank(true);
+        interbank = true;
       }
+      setIsInterbank(interbank);
     }
 
-    setForm({ 
-      ...form, 
+    setForm({
+      ...form,
       cuenta_destino_id: finalId,
-      banco_nombre: item.isBeneficiary ? item.apellido.replace(/[()]/g, '') : 'Banco BCP',
+      banco_nombre: item.isBeneficiary ? item.entidad_nombre || item.apellido.replace(/[()]/g, '') : 'Banco BCP',
       cuenta_externa: item.isBeneficiary ? item.numero_cuenta : ''
     });
-    setDestSearch(`${item.numero_cuenta} — ${item.nombre} ${item.apellido}`);
+    setDestSearch(item.isBeneficiary
+      ? `${item.numero_cuenta} — ${item.nombre} (${item.entidad_nombre || ''})`
+      : `${item.numero_cuenta} — ${item.nombre} ${item.apellido}`);
     setShowDestDrop(false);
   };
 
@@ -234,18 +253,19 @@ export default function TransaccionesPage() {
             {['deposito', 'retiro', 'transferencia'].map(t => (
               <button key={t} type="button"
                 className={`type-toggle-btn ${tipoOpe === t ? 'active' : ''}`}
-                onClick={() => { 
-                  setTipoOpe(t); 
-                  setForm({ 
-                    cuenta_origen_id: '', 
-                    cuenta_destino_id: '', 
-                    monto: '', 
+                onClick={() => {
+                  setTipoOpe(t);
+                  setForm({
+                    cuenta_origen_id: '',
+                    cuenta_destino_id: '',
+                    monto: '',
                     descripcion: '',
                     banco_nombre: '',
                     cuenta_externa: ''
                   });
                   setOriginSearch(''); setDestSearch('');
                   setIsInterbank(false);
+                  setBeneficiarios([]);
                 }}>
                 {t === 'deposito' ? '⬆️' : t === 'retiro' ? '⬇️' : '↔️'} {t.toUpperCase()}
               </button>
@@ -280,7 +300,11 @@ export default function TransaccionesPage() {
                       onChange={(e) => {
                         setOriginSearch(e.target.value);
                         setShowOriginDrop(true);
-                        if (form.cuenta_origen_id) setForm({ ...form, cuenta_origen_id: '' });
+                        if (form.cuenta_origen_id) {
+                          setForm({ ...form, cuenta_origen_id: '' });
+                          setBeneficiarios([]);
+                          setDestSearch('');
+                        }
                       }}
                       onFocus={() => setShowOriginDrop(true)}
                       required
@@ -307,9 +331,9 @@ export default function TransaccionesPage() {
                   <label>Cuenta de Destino *</label>
                   {!isInterbank ? (
                     <div className="search-select-container">
-                      <input 
-                        type="text" 
-                        placeholder="🔍 Buscar cuenta BCP o Beneficiario..."
+                      <input
+                        type="text"
+                        placeholder={beneficiarios.length > 0 ? '🔍 Buscar cuenta BCP o selecciona un beneficiario...' : '🔍 Buscar cuenta destino...'}
                         value={destSearch}
                         onChange={(e) => {
                           setDestSearch(e.target.value);
@@ -317,22 +341,54 @@ export default function TransaccionesPage() {
                           if (form.cuenta_destino_id) setForm({ ...form, cuenta_destino_id: '' });
                         }}
                         onFocus={() => setShowDestDrop(true)}
+                        onBlur={() => setTimeout(() => setShowDestDrop(false), 200)}
                         required
                       />
-                      {showDestDrop && destSearch.length > 0 && (
+                      {showDestDrop && (destSearch.length > 0 || beneficiarios.length > 0) && (
                         <ul className="search-select-results">
-                          {filterDestinations(destSearch).length === 0 ? (
-                            <li className="search-select-no-results">No hay coincidencias</li>
-                          ) : (
-                            filterDestinations(destSearch).map((item, idx) => (
-                              <li key={item.id || idx} className="search-select-item" onClick={() => selectDest(item)}>
-                                <strong>
-                                  {item.isBeneficiary ? '👤 ' : '🏦 '} 
-                                  {item.numero_cuenta} — {item.nombre} {item.apellido}
-                                </strong>
-                                <span>{item.isBeneficiary ? 'Contacto Agenda' : `DNI: ${item.dni}`}</span>
+                          {/* Beneficiarios de agenda siempre visibles primero */}
+                          {beneficiarios.length > 0 && (
+                            <>
+                              <li style={{ padding: '6px 12px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', background: 'var(--bg-subtle, #f5f5f5)', textTransform: 'uppercase', letterSpacing: 1, pointerEvents: 'none' }}>
+                                📒 Agenda de beneficiarios
                               </li>
-                            ))
+                              {beneficiarios
+                                .filter(b => !destSearch || b.alias_contacto.toLowerCase().includes(destSearch.toLowerCase()) || b.numero_cuenta.includes(destSearch))
+                                .map(b => ({
+                                  id: null,
+                                  numero_cuenta: b.numero_cuenta,
+                                  nombre: b.alias_contacto,
+                                  apellido: `(${b.entidad_nombre})`,
+                                  isBeneficiary: true,
+                                  entidad_nombre: b.entidad_nombre,
+                                }))
+                                .map((item, idx) => (
+                                  <li key={`ben-${idx}`} className="search-select-item" onMouseDown={() => selectDest(item)}>
+                                    <strong>👤 {item.numero_cuenta} — {item.nombre}</strong>
+                                    <span>🏦 {item.entidad_nombre} · Agenda</span>
+                                  </li>
+                                ))
+                              }
+                            </>
+                          )}
+                          {/* Cuentas BCP internas */}
+                          {destSearch.length > 0 && (
+                            <>
+                              <li style={{ padding: '6px 12px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', background: 'var(--bg-subtle, #f5f5f5)', textTransform: 'uppercase', letterSpacing: 1, pointerEvents: 'none' }}>
+                                🏦 Cuentas BCP
+                              </li>
+                              {filterDestinations(destSearch).filter(i => !i.isBeneficiary).length === 0 ? (
+                                <li className="search-select-no-results">Sin cuentas internas coincidentes</li>
+                              ) : filterDestinations(destSearch).filter(i => !i.isBeneficiary).map((item, idx) => (
+                                <li key={`int-${idx}`} className="search-select-item" onMouseDown={() => selectDest(item)}>
+                                  <strong>🏦 {item.numero_cuenta} — {item.nombre} {item.apellido}</strong>
+                                  <span>DNI: {item.dni}</span>
+                                </li>
+                              ))}
+                            </>
+                          )}
+                          {destSearch.length === 0 && beneficiarios.length === 0 && (
+                            <li className="search-select-no-results">Escribe para buscar cuentas</li>
                           )}
                         </ul>
                       )}

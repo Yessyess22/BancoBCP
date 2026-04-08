@@ -1,6 +1,10 @@
 const pool = require('../config/db');
 
-const findAll = async () => {
+const findAll = async (clienteId = null) => {
+  const where = clienteId
+    ? 'WHERE (co.cliente_id = $1 OR cd.cliente_id = $1)'
+    : '';
+  const params = clienteId ? [clienteId] : [];
   const { rows } = await pool.query(`
     SELECT t.*,
       co.numero_cuenta AS cuenta_origen,
@@ -13,8 +17,9 @@ const findAll = async () => {
     LEFT JOIN cuentas cd ON t.cuenta_destino_id = cd.id
     LEFT JOIN monedas m_origen ON co.moneda_id = m_origen.id
     LEFT JOIN monedas m_destino ON cd.moneda_id = m_destino.id
+    ${where}
     ORDER BY t.created_at DESC LIMIT 100
-  `);
+  `, params);
   return rows;
 };
 

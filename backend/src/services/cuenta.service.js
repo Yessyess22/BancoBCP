@@ -1,6 +1,8 @@
 const pool = require('../config/db');
 
-const getAll = async () => {
+const getAll = async (clienteId = null) => {
+  const where = clienteId ? 'WHERE c.cliente_id = $1' : '';
+  const params = clienteId ? [clienteId] : [];
   const result = await pool.query(`
     SELECT c.*, cl.nombre, cl.apellido, cl.dni,
            tc.descripcion AS tipo_descripcion,
@@ -10,8 +12,9 @@ const getAll = async () => {
     JOIN clientes cl ON c.cliente_id = cl.id
     LEFT JOIN tipos_cuenta tc ON c.tipo_cuenta_id = tc.id
     LEFT JOIN monedas m ON c.moneda_id = m.id
+    ${where}
     ORDER BY c.created_at DESC
-  `);
+  `, params);
   return result.rows;
 };
 

@@ -15,13 +15,21 @@ const solicitar = async (data) => {
 };
 
 const procesarRevision = async (id, payload) => {
-  const { estado, monto_aprobado, usuario_aprueba } = payload;
+  const { estado, monto_aprobado, usuario_aprueba, rol_aprueba } = payload;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     const credito = await repo.findById(id);
     if (!credito) throw Object.assign(new Error('Crédito no encontrado'), { status: 404 });
     if (credito.estado !== 'solicitado') throw Object.assign(new Error('Crédito ya ha sido procesado'), { status: 400 });
+
+    // Un empleado no puede aprobar/rechazar su propia solicitud — requiere supervisor o admin
+    if (rol_aprueba !== 'admin' && credito.usuario_registra && String(credito.usuario_registra) === String(usuario_aprueba)) {
+      throw Object.assign(
+        new Error('No puedes aprobar una solicitud que tú mismo registraste. Se requiere un supervisor.'),
+        { status: 403 }
+      );
+    }
 
     const updated = await repo.updateEstado(client, id, { 
       estado, 

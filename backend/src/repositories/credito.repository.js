@@ -1,6 +1,8 @@
 const pool = require('../config/db');
 
-const findAll = async () => {
+const findAll = async (clienteId = null) => {
+  const where = clienteId ? 'WHERE cr.cliente_id = $1' : '';
+  const params = clienteId ? [clienteId] : [];
   const { rows } = await pool.query(`
     SELECT cr.*, cl.nombre, cl.apellido, cl.dni,
            ur.nombre AS registrado_por_nombre,
@@ -9,8 +11,9 @@ const findAll = async () => {
     JOIN clientes cl ON cr.cliente_id = cl.id
     LEFT JOIN usuarios ur ON cr.usuario_registra = ur.id
     LEFT JOIN usuarios ua ON cr.usuario_aprueba  = ua.id
+    ${where}
     ORDER BY cr.created_at DESC
-  `);
+  `, params);
   return rows;
 };
 

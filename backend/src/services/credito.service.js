@@ -1,7 +1,7 @@
 const pool = require('../config/db');
 const repo = require('../repositories/credito.repository');
 
-const getAll = () => repo.findAll();
+const getAll = (clienteId = null) => repo.findAll(clienteId);
 const getById = (id) => repo.findById(id);
 const getCuotas = (id) => repo.findCuotasByCreditoId(id);
 
